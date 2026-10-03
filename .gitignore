@@ -1,0 +1,18 @@
+# Competition images (download from Kaggle into data/train/train and data/test/test)
+data/train/
+data/test/
+
+# Generated datasets, training runs, weights
+datasets/
+runs/
+*.pt
+*.onnx
+
+# Python / notebooks
+__pycache__/
+*.py[cod]
+.ipynb_checkpoints/
+
+# Editor / tools
+.claude/
+.vscode/

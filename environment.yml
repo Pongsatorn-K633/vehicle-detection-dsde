@@ -1,0 +1,38 @@
+# Bangkok CCTV Vehicle Detection (2110531 DSDE take-home midterm)
+#   conda env create -f environment.yml
+#   conda activate vehicle-det
+#   python -c "import torch; print(torch.__version__, torch.cuda.is_available(), torch.cuda.get_device_name(0))"
+#
+# PyTorch comes from the CUDA 12.6 wheel index on purpose: the cu128+ wheels
+# dropped Pascal (sm_61) support, so they will not run on a GTX 1060.
+name: vehicle-det
+channels:
+  - conda-forge
+dependencies:
+  - python=3.11
+  - pip
+  - pip:
+      - --extra-index-url https://download.pytorch.org/whl/cu126
+      - torch==2.8.0
+      - torchvision==0.23.0
+      # detection (YOLO26 needs ultralytics >= 8.4)
+      - ultralytics>=8.4.0
+      - ensemble-boxes        # Weighted Boxes Fusion for ensembling / TTA
+      - sahi                  # optional sliced inference for tiny objects
+      # evaluation: same metric as the Kaggle scorer
+      - pycocotools
+      # data handling / EDA
+      - numpy
+      - pandas
+      - scikit-learn          # GroupKFold by camera
+      - opencv-python
+      - pillow
+      - albumentations
+      - matplotlib
+      - seaborn
+      - tqdm
+      - pyyaml
+      # notebooks
+      - jupyterlab
+      - ipykernel
+      - ipywidgets
