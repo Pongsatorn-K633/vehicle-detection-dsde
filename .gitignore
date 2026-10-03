@@ -1,6 +1,5 @@
-# Competition images (download from Kaggle into data/train/train and data/test/test)
-data/train/
-data/test/
+# Competition images (download from Kaggle into original-data/train/train and original-data/test/test)
+original-data/
 
 # Generated datasets, training runs, weights
 datasets/
