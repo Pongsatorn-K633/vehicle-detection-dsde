@@ -13,11 +13,12 @@ conda activate vehicle-det
 Put the Kaggle images in place (they are not in git):
 
 ```
-data/
-  train.csv
-  sample_submission.csv
-  train/train/*.jpg   (2,991 images)
-  test/test/*.jpg     (1,013 images)
+docs/
+  train.csv               (in git)
+  sample_submission.csv   (in git)
+original-data/
+  train/train/*.jpg       (2,991 images)
+  test/test/*.jpg         (1,013 images)
 ```
 
 ## Pipeline
