@@ -3,8 +3,9 @@
 #   conda activate vehicle-det
 #   python -c "import torch; print(torch.__version__, torch.cuda.is_available(), torch.cuda.get_device_name(0))"
 #
-# PyTorch comes from the CUDA 12.6 wheel index on purpose: the cu128+ wheels
-# dropped Pascal (sm_61) support, so they will not run on a GTX 1060.
+# PyTorch comes from the CUDA 12.8 wheel index: it is the first build that supports
+# RTX 50-series (Blackwell, used for training: RTX 5090) and it also runs on RTX 20/30/40 cards.
+# For a Pascal GPU (GTX 10xx) change cu128 to cu126 below; cu128 dropped Pascal support.
 name: vehicle-det
 channels:
   - conda-forge
@@ -12,7 +13,7 @@ dependencies:
   - python=3.11
   - pip
   - pip:
-      - --extra-index-url https://download.pytorch.org/whl/cu126
+      - --extra-index-url https://download.pytorch.org/whl/cu128
       - torch==2.8.0
       - torchvision==0.23.0
       # detection (YOLO26 needs ultralytics >= 8.4)

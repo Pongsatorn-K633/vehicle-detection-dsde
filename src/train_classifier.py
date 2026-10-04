@@ -40,7 +40,7 @@ def parse_args():
     p.add_argument("--lr", type=float, default=1e-4)
     p.add_argument("--balance", type=float, default=0.5, help="0 = natural frequencies, 1 = fully class-balanced")
     p.add_argument("--samples-per-epoch", type=int, default=6000)
-    p.add_argument("--workers", type=int, default=4)
+    p.add_argument("--workers", type=int, default=8)
     p.add_argument("--seed", type=int, default=0)
     return p.parse_args()
 

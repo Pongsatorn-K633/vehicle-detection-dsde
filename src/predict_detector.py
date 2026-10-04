@@ -24,7 +24,7 @@ def parse_args():
     p.add_argument("--weights", required=True)
     p.add_argument("--name", default=None, help="output folder under preds/ (default: run folder name)")
     p.add_argument("--splits", nargs="+", default=["val", "test"], choices=["val", "test"])
-    p.add_argument("--imgsz", type=int, default=640, help="YOLO only; RF-DETR uses its training resolution")
+    p.add_argument("--imgsz", type=int, default=704, help="YOLO only; RF-DETR uses its training resolution")
     p.add_argument("--conf", type=float, default=0.001)
     p.add_argument("--max-det", type=int, default=300)
     p.add_argument("--no-flip", action="store_true", help="skip the mirrored-image pass")
