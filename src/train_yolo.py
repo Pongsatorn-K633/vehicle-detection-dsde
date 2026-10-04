@@ -1,7 +1,7 @@
-"""Train a YOLO detector.
+"""Train the YOLO26 detector (detector 2).
 
-    python src/train.py --name y26m_640                               # baseline on the camera split
-    python src/train.py --data datasets/yolo_full/data.yaml --name y26m_640_full   # final model
+    python src/train_yolo.py --name y26m_640                                    # experiment (camera split)
+    python src/train_yolo.py --data datasets/yolo_full/data.yaml --name y26m_640_full   # final model
 
 Weights end up in runs/<name>/weights/best.pt (and last.pt). All arguments are
 saved by Ultralytics in runs/<name>/args.yaml for reproducibility.
@@ -25,7 +25,7 @@ def parse_args():
     p.add_argument("--workers", type=int, default=4)
     p.add_argument("--device", default="0")
     p.add_argument("--seed", type=int, default=0)
-    p.add_argument("--copy-paste", type=float, default=0.0, help="needs segmentation labels")
+    p.add_argument("--fraction", type=float, default=1.0, help="use part of the train set (smoke tests)")
     return p.parse_args()
 
 
@@ -41,10 +41,10 @@ def main():
         workers=args.workers,
         device=args.device,
         seed=args.seed,
+        fraction=args.fraction,
         deterministic=True,
         cos_lr=True,
         close_mosaic=10,
-        copy_paste=args.copy_paste,
         project=str(RUNS_DIR),
         name=args.name,
         exist_ok=False,

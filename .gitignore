@@ -1,6 +1,7 @@
-# Generated datasets, training runs, weights
+# Generated datasets, training runs, predictions, weights
 datasets/
 runs/
+preds/
 *.pt
 *.onnx
 
