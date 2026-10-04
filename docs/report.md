@@ -2,8 +2,9 @@
 
 As of 2026-10-04. Round 1 (experiment models) and Round 2 (final models) are both finished.
 
-**Result so far:** 0.637 mAP@50 on the Kaggle public leaderboard (3rd place), from a pipeline that scores
-0.693 on the local validation set. Full marks for the mAP part of the grade start at 0.56.
+**Result:** 0.703 mAP@50 on the Kaggle public leaderboard (1st place) with the Round 2 models. The Round 1
+models scored 0.637 public and 0.693 on the local validation set. Full marks for the mAP part of the grade
+start at 0.56.
 
 ## 1. Data handling
 
@@ -200,7 +201,10 @@ There is no local score: the validation cameras are now in training.
 | Submission | Models | Val mAP50 | Kaggle public |
 |---|---|---|---|
 | `wbf_exp_c8big_a0.4.csv` | Round 1 (12 cameras) | 0.693 | 0.637 |
-| `wbf_final_c8big_a0.4.csv` | Round 2 (15 cameras) | – | *to be filled in after upload* |
+| `wbf_final_c8big_a0.4.csv` | Round 2 (15 cameras) | – | **0.703** (1st place) |
+
+Training on all 15 cameras added 0.066 on the public leaderboard. More camera variety is what the unseen
+test cameras need most.
 
 ## 6. Next steps
 
