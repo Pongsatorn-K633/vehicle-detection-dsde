@@ -53,8 +53,8 @@ Things to know about the data:
 
 | Stage | What it does | Script |
 |---|---|---|
-| Detector 1: **RF-DETR Medium** | Transformer detector, 8 classes | `train_rfdetr.py` |
-| Detector 2: **YOLO26m** | CNN detector, 8 classes; makes different mistakes than RF-DETR | `train_yolo.py` |
+| Detector 1: **RF-DETR Large** | Transformer detector, 8 classes | `train_rfdetr.py` |
+| Detector 2: **YOLO26l** | CNN detector, 8 classes; makes different mistakes than RF-DETR | `train_yolo.py` |
 | **Flip TTA** | Each detector also predicts on the mirrored image; boxes are mirrored back | `predict_detector.py` |
 | **Weighted Boxes Fusion** | Merges all 4 prediction sets (2 models × original/flipped) into one | `fuse.py` |
 | **ConvNeXt-Tiny classifier** | Looks again at boxes labelled Motorcycle / Tuktuk / Pickup / Songthaew | `train_classifier.py`, `reclassify.py` |
@@ -79,11 +79,26 @@ conda activate vehicle-det
 python -c "import torch; print(torch.cuda.is_available(), torch.cuda.get_device_name(0))"
 ```
 
-PyTorch comes from the CUDA 12.6 wheels, which run on both older (GTX 10xx) and newer GPUs.
+PyTorch comes from the CUDA 12.8 wheels (needed for RTX 50-series; also runs on RTX 20/30/40).
+For a GTX 10xx card change `cu128` to `cu126` in `environment.yml`.
 The images and CSVs are in the repo (`original-data/`, `docs/`), so cloning is enough.
 
-**Hardware used:** RTX 4070 Laptop GPU (8 GB). Measured: RF-DETR Medium at 640 px uses 4.7 GB with batch 4 and
-takes about 4 minutes per epoch.
+**Hardware used for training:** RTX 5090 (32 GB), Linux. The script defaults are set for it.
+On an 8 GB GPU (tested on an RTX 4070 Laptop) add these flags:
+
+| Script | Extra flags for 8 GB | Measured on 8 GB |
+|---|---|---|
+| `train_rfdetr.py` | `--batch 4 --grad-accum 4 --workers 2` | 5.2 GB, ~6 min/epoch |
+| `train_yolo.py` | `--model yolo26m.pt --batch 8 --workers 4` | 5.8 GB, ~3 min/epoch |
+| `train_classifier.py` | none | |
+
+**Before a long run on a new machine**, train one epoch to check memory and time, then delete the test run:
+
+```
+python src/train_rfdetr.py --name _check --epochs 1      # watch max_mem and the epoch time
+nvidia-smi                                               # in a second terminal while it runs
+rm -rf runs/_check
+```
 
 ## 4. Step by step
 
@@ -91,18 +106,18 @@ Run every command from the repo root with the `vehicle-det` environment active.
 There are two rounds: **experiment** models (trained without the 3 validation cameras, used to measure and tune)
 and **final** models (same settings, trained on all 15 cameras, used for Kaggle).
 
-### Round 1: experiment models (about 6 hours of GPU time)
+### Round 1: experiment models (about 3–4 hours on the RTX 5090)
 
 ```
 python src/prepare_data.py                                    # datasets/yolo + datasets/rfdetr
 
-python src/train_rfdetr.py --name rfdm_640                    # ~3.5 h  -> runs/rfdm_640/checkpoint_best_total.pth
-python src/train_yolo.py   --name y26m_640                    # ~2 h    -> runs/y26m_640/weights/best.pt
-python src/train_classifier.py --name cls_convnext            # ~15 min -> runs/cls_convnext/best.pt
+python src/train_rfdetr.py --name rfdl_704                    # ~1.5 h  -> runs/rfdl_704/checkpoint_best_total.pth
+python src/train_yolo.py   --name y26l_704                    # ~1.5 h  -> runs/y26l_704/weights/best.pt
+python src/train_classifier.py --name cls_convnext            # ~10 min -> runs/cls_convnext/best.pt
 
-python src/predict_detector.py --weights runs/rfdm_640/checkpoint_best_total.pth
-python src/predict_detector.py --weights runs/y26m_640/weights/best.pt
-python src/fuse.py --runs rfdm_640 y26m_640 --weights 2 1 --out wbf_exp
+python src/predict_detector.py --weights runs/rfdl_704/checkpoint_best_total.pth
+python src/predict_detector.py --weights runs/y26l_704/weights/best.pt
+python src/fuse.py --runs rfdl_704 y26l_704 --weights 2 1 --out wbf_exp
 python src/reclassify.py --preds wbf_exp --classifier runs/cls_convnext/best.pt --alpha 0 0.2 0.4 0.6
 ```
 
@@ -110,21 +125,21 @@ Then compare the stages (section 5) and pick the best fusion weights and alpha.
 A first Kaggle submission can already be made from these models:
 
 ```
-python src/make_submission.py --preds rfdm_640                # writes submissions/rfdm_640.csv
+python src/make_submission.py --preds rfdl_704                # writes submissions/rfdl_704.csv
 ```
 
-### Round 2: final models (about 7 hours of GPU time)
+### Round 2: final models (about 3–4 hours on the RTX 5090)
 
 ```
 python src/prepare_data.py --full                             # datasets/yolo_full + datasets/rfdetr_full
 
-python src/train_rfdetr.py --data datasets/rfdetr_full --name rfdm_640_full
-python src/train_yolo.py   --data datasets/yolo_full/data.yaml --name y26m_640_full
+python src/train_rfdetr.py --data datasets/rfdetr_full --name rfdl_704_full
+python src/train_yolo.py   --data datasets/yolo_full/data.yaml --name y26l_704_full
 python src/train_classifier.py --full --name cls_convnext_full
 
-python src/predict_detector.py --weights runs/rfdm_640_full/checkpoint_best_total.pth --splits test
-python src/predict_detector.py --weights runs/y26m_640_full/weights/best.pt --splits test
-python src/fuse.py --runs rfdm_640_full y26m_640_full --weights 2 1 --out wbf_final --splits test
+python src/predict_detector.py --weights runs/rfdl_704_full/checkpoint_best_total.pth --splits test
+python src/predict_detector.py --weights runs/y26l_704_full/weights/best.pt --splits test
+python src/fuse.py --runs rfdl_704_full y26l_704_full --weights 2 1 --out wbf_final --splits test
 python src/reclassify.py --preds wbf_final --classifier runs/cls_convnext_full/best.pt --alpha 0.4 --splits test
 python src/make_submission.py --preds wbf_final_cls_a0.4
 ```
@@ -135,9 +150,9 @@ submit the previous stage's folder instead (for example `--preds wbf_final`).
 ## 5. Comparing stages (ablation)
 
 ```
-python src/fuse.py --runs rfdm_640 --no-tta --out rfdm_640_wbf --splits val   # RF-DETR, duplicates removed
-python src/fuse.py --runs rfdm_640 --out rfdm_640_tta --splits val            # + flip TTA
-python src/evaluate.py --preds rfdm_640 y26m_640 rfdm_640_wbf rfdm_640_tta wbf_exp wbf_exp_cls_a0.2 wbf_exp_cls_a0.4
+python src/fuse.py --runs rfdl_704 --no-tta --out rfdl_704_wbf --splits val   # RF-DETR, duplicates removed
+python src/fuse.py --runs rfdl_704 --out rfdl_704_tta --splits val            # + flip TTA
+python src/evaluate.py --preds rfdl_704 y26l_704 rfdl_704_wbf rfdl_704_tta wbf_exp wbf_exp_cls_a0.2 wbf_exp_cls_a0.4
 ```
 
 `evaluate.py` prints one row per stage:
@@ -156,11 +171,19 @@ A smoke test with 1-epoch models confirmed each stage adds a little: RF-DETR 0.4
 
 | Setting | RF-DETR | YOLO26 | Classifier |
 |---|---|---|---|
-| Model | RF-DETR Medium (DINOv2 backbone, COCO-pretrained) | YOLO26m (COCO-pretrained) | ConvNeXt-Tiny (ImageNet-pretrained, `timm`) |
-| Input | 640 px (images enlarged ~1.8×) | 640 px | box + 15% padding, resized to 224 |
-| Epochs | 50 | 100, early stop after 30 | 15 × 6,000 crops |
-| Batch | 4 × 4 accumulation = 16 | 16 | 64 |
-| Notes | EMA weights, best epoch by val mAP | cosine LR, mosaic off for last 10 epochs | random box shift/resize, rare classes sampled more |
+| Model | RF-DETR Large (DINOv2-S backbone, 34M params, COCO-pretrained at 704 px) | YOLO26l (COCO-pretrained) | ConvNeXt-Tiny (ImageNet-pretrained, `timm`) |
+| Input | 704 px (images enlarged 2×, objects are tiny) | 704 px | box + 15% padding, resized to 224 |
+| Epochs | 40 (on the oversampled set ≈ 53 original-size epochs) | 60, early stop after 20 | 15 × 6,000 crops |
+| Batch | 16, lr 1e-4 (backbone 1.5e-4) | 16 (Ultralytics accumulates to an effective 64) | 64 |
+| LR schedule | cosine, 1 warm-up epoch (default "step" would never decay within 40 epochs) | cosine | one-cycle |
+| Augmentation | h-flip, brightness/contrast, colour shift (day/night/rain); no rotation or v-flip | mosaic (off last 10 epochs), h-flip, HSV, milder zoom (`scale` 0.3) | random box shift/resize, h-flip, colour jitter |
+| Imbalance | repeat-factor oversampling in `prepare_data.py` | same | rare classes sampled more (`--balance 0.5`) |
+| Notes | EMA weights, best epoch by val mAP50:95 | | best epoch by val balanced accuracy |
+
+**Oversampling.** `prepare_data.py` copies every train image that contains a rare class 2–4 times
+(repeat-factor sampling, `--repeat-thr 0.3`). All boxes in a copied image stay labelled, so no vehicle is
+turned into background; validation images are never copied. Songthaew appears in only 38 train images, so
+its boxes go from 93 to 372; Tuktuk, Van and Pickup roughly double. The train split grows from 2,388 to 3,178 images.
 
 Prediction uses a very low score threshold (0.001): low-scored boxes are ranked last, so they cannot lower AP.
 Submissions keep at most 100 boxes per image (pycocotools ignores the rest). Every run saves its settings
