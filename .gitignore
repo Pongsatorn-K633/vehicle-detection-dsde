@@ -13,3 +13,6 @@ __pycache__/
 # Editor / tools
 .claude/
 .vscode/
+
+# Duplicate of the Kaggle download (same files as original-data/ and docs/)
+2110531-dsde-2026-1/
