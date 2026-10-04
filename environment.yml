@@ -17,6 +17,8 @@ dependencies:
       - torchvision==0.23.0
       # detection (YOLO26 needs ultralytics >= 8.4)
       - ultralytics>=8.4.0
+      - rfdetr[train]==1.11.1 # RF-DETR detector (training extras = PyTorch Lightning)
+      - timm                  # ConvNeXt-Tiny crop classifier
       - ensemble-boxes        # Weighted Boxes Fusion for ensembling / TTA
       - sahi                  # optional sliced inference for tiny objects
       # evaluation: same metric as the Kaggle scorer
