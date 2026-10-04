@@ -3,6 +3,9 @@
 Take-home midterm for 2110531 Data Science and Data Engineering Tools (2026/1).
 The task is 8-class vehicle detection on Bangkok (BMA) traffic camera images, scored on Kaggle with **mAP@50** (pycocotools).
 
+**Result:** 0.703 mAP@50 on the Kaggle public leaderboard (`submissions/wbf_final_c8big_a0.4.csv`).
+The full write-up (data handling, both rounds, ablations) is in [docs/report.md](docs/report.md).
+
 ## Contents
 
 1. [Dataset](#1-dataset)
@@ -54,10 +57,13 @@ Things to know about the data:
 | Stage | What it does | Script |
 |---|---|---|
 | Detector 1: **RF-DETR Large** | Transformer detector, 8 classes | `train_rfdetr.py` |
-| Detector 2: **YOLO26l** | CNN detector, 8 classes; makes different mistakes than RF-DETR | `train_yolo.py` |
+| Detector 2: **YOLO26m** | CNN detector, 8 classes; makes different mistakes than RF-DETR | `train_yolo.py` |
 | **Flip TTA** | Each detector also predicts on the mirrored image; boxes are mirrored back | `predict_detector.py` |
-| **Weighted Boxes Fusion** | Merges all 4 prediction sets (2 models × original/flipped) into one | `fuse.py` |
-| **ConvNeXt-Tiny classifier** | Looks again at boxes labelled Motorcycle / Tuktuk / Pickup / Songthaew | `train_classifier.py`, `reclassify.py` |
+| **Remove duplicates (NMS)** | Per model and class, before fusion | `fuse.py` |
+| **Weighted Boxes Fusion** | Merges all 4 prediction sets (2 models × original/flipped) into one, RF-DETR weighted 2, YOLO 1 | `fuse.py` |
+| **ConvNeXt-Tiny classifier** | Knows all 8 classes; looks again at boxes labelled Car / Truck / Bus / Pickup / Songthaew / Van and adds a second guess (alpha 0.4) | `train_classifier.py`, `reclassify.py` |
+
+The diagram is drawn by `docs/pipeline_diagram.py`.
 
 Each stage writes its predictions to `preds/<name>/val.csv` and `test.csv`, so every stage can be scored on
 its own and a stage is kept only if it raises the validation mAP50.
@@ -106,53 +112,61 @@ Run every command from the repo root with the `vehicle-det` environment active.
 There are two rounds: **experiment** models (trained without the 3 validation cameras, used to measure and tune)
 and **final** models (same settings, trained on all 15 cameras, used for Kaggle).
 
-### Round 1: experiment models (about 3–4 hours on the RTX 5090)
+The epoch counts are short on purpose. Round 2 has no clean validation set, so it uses the **last** epoch;
+in round 1, RF-DETR at 40 epochs peaked at epoch 6 and then lost 0.06 mAP50, while 12 epochs ends at its best
+(details in `docs/report.md`, section 3.5).
+
+### Round 1: experiment models (about 25 minutes on the RTX 5090)
 
 ```
 python src/prepare_data.py                                    # datasets/yolo + datasets/rfdetr
 
-python src/train_rfdetr.py --name rfdl_704                    # ~1.5 h  -> runs/rfdl_704/checkpoint_best_total.pth
-python src/train_yolo.py   --name y26l_704                    # ~1.5 h  -> runs/y26l_704/weights/best.pt
-python src/train_classifier.py --name cls_convnext            # ~10 min -> runs/cls_convnext/best.pt
+python src/train_rfdetr.py --epochs 12 --name rfdl_e12                         # ~10 min
+python src/train_yolo.py --model yolo26m.pt --epochs 25 --name y26m_e25        # ~8 min
+python src/train_classifier.py --classes Car Motorcycle Bus Truck Tuktuk Van Pickup Songthaew \
+    --samples-per-epoch 12000 --name cls_all8                                  # ~3 min
 
-python src/predict_detector.py --weights runs/rfdl_704/checkpoint_best_total.pth
-python src/predict_detector.py --weights runs/y26l_704/weights/best.pt
-python src/fuse.py --runs rfdl_704 y26l_704 --weights 2 1 --out wbf_exp
-python src/reclassify.py --preds wbf_exp --classifier runs/cls_convnext/best.pt --alpha 0 0.2 0.4 0.6
+python src/predict_detector.py --weights runs/rfdl_e12/checkpoint_best_total.pth
+python src/predict_detector.py --weights runs/y26m_e25/weights/last.pt --name y26m_e25_last
+python src/fuse.py --runs rfdl_e12 y26m_e25_last --weights 2 1 --out wbf_new
+python src/reclassify.py --preds wbf_new --classifier runs/cls_all8/best.pt \
+    --apply-to Car Truck Bus Pickup Songthaew Van --alpha 0.2 0.4 --out wbf_new_c8big
+python src/evaluate.py --preds wbf_new wbf_new_c8big_a0.2 wbf_new_c8big_a0.4   # val mAP50 0.676 / 0.683 / 0.688
 ```
 
-Then compare the stages (section 5) and pick the best fusion weights and alpha.
-A first Kaggle submission can already be made from these models:
+`yolo26m.pt` is downloaded by Ultralytics on first use.
 
-```
-python src/make_submission.py --preds rfdl_704                # writes submissions/rfdl_704.csv
-```
+### Round 2: final models on all 15 cameras (about 25 minutes on the RTX 5090)
 
-### Round 2: final models (about 3–4 hours on the RTX 5090)
+Same settings. `--patience 100` keeps early stopping off, and the last-epoch weights are used
+(`last_ema.pth`, `last.pt`), because the validation cameras are now part of training.
 
 ```
 python src/prepare_data.py --full                             # datasets/yolo_full + datasets/rfdetr_full
 
-python src/train_rfdetr.py --data datasets/rfdetr_full --name rfdl_704_full
-python src/train_yolo.py   --data datasets/yolo_full/data.yaml --name y26l_704_full
-python src/train_classifier.py --full --name cls_convnext_full
+python src/train_rfdetr.py --data datasets/rfdetr_full --epochs 12 --name rfdl_e12_full
+python src/train_yolo.py --model yolo26m.pt --data datasets/yolo_full/data.yaml --epochs 25 --patience 100 \
+    --name y26m_e25_full
+python src/train_classifier.py --full --classes Car Motorcycle Bus Truck Tuktuk Van Pickup Songthaew \
+    --samples-per-epoch 12000 --name cls_all8_full
 
-python src/predict_detector.py --weights runs/rfdl_704_full/checkpoint_best_total.pth --splits test
-python src/predict_detector.py --weights runs/y26l_704_full/weights/best.pt --splits test
-python src/fuse.py --runs rfdl_704_full y26l_704_full --weights 2 1 --out wbf_final --splits test
-python src/reclassify.py --preds wbf_final --classifier runs/cls_convnext_full/best.pt --alpha 0.4 --splits test
-python src/make_submission.py --preds wbf_final_cls_a0.4
+python src/predict_detector.py --weights runs/rfdl_e12_full/last_ema.pth --name rfdl_e12_full --splits test
+python src/predict_detector.py --weights runs/y26m_e25_full/weights/last.pt --name y26m_e25_full --splits test
+python src/fuse.py --runs rfdl_e12_full y26m_e25_full --weights 2 1 --out wbf_final --splits test
+python src/reclassify.py --preds wbf_final --classifier runs/cls_all8_full/best.pt \
+    --apply-to Car Truck Bus Pickup Songthaew Van --alpha 0.4 --splits test --out wbf_final_c8big
+python src/make_submission.py --preds wbf_final_c8big_a0.4    # -> submissions/wbf_final_c8big_a0.4.csv (public 0.703)
 ```
 
-Use the fusion weights, alpha and stages that won in round 1. If a stage did not help, skip it and
-submit the previous stage's folder instead (for example `--preds wbf_final`).
+**`image_id` must be the short test file name** (`1068_20260825_060110.jpg`), which `make_submission.py`
+writes. The long Thai ids shown in `sample_submission.csv` score exactly 0 on Kaggle.
 
 ## 5. Comparing stages (ablation)
 
 ```
-python src/fuse.py --runs rfdl_704 --no-tta --out rfdl_704_wbf --splits val   # RF-DETR, duplicates removed
-python src/fuse.py --runs rfdl_704 --out rfdl_704_tta --splits val            # + flip TTA
-python src/evaluate.py --preds rfdl_704 y26l_704 rfdl_704_wbf rfdl_704_tta wbf_exp wbf_exp_cls_a0.2 wbf_exp_cls_a0.4
+python src/fuse.py --runs rfdl_e12 --no-tta --out rfdl_e12_wbf --splits val    # RF-DETR, duplicates removed
+python src/fuse.py --runs rfdl_e12 --out rfdl_e12_tta --splits val             # + flip TTA
+python src/evaluate.py --preds rfdl_e12 rfdl_e12_wbf rfdl_e12_tta y26m_e25_last wbf_new wbf_new_c8big_a0.4
 ```
 
 `evaluate.py` prints one row per stage:
@@ -171,14 +185,14 @@ A smoke test with 1-epoch models confirmed each stage adds a little: RF-DETR 0.4
 
 | Setting | RF-DETR | YOLO26 | Classifier |
 |---|---|---|---|
-| Model | RF-DETR Large (DINOv2-S backbone, 34M params, COCO-pretrained at 704 px) | YOLO26l (COCO-pretrained) | ConvNeXt-Tiny (ImageNet-pretrained, `timm`) |
+| Model | RF-DETR Large (DINOv2-S backbone, 34M params, COCO-pretrained at 704 px) | YOLO26m (COCO-pretrained) | ConvNeXt-Tiny (ImageNet-pretrained, `timm`), all 8 classes |
 | Input | 704 px (images enlarged 2×, objects are tiny) | 704 px | box + 15% padding, resized to 224 |
-| Epochs | 40 (on the oversampled set ≈ 53 original-size epochs) | 60, early stop after 20 | 15 × 6,000 crops |
+| Epochs | 12 (`--epochs 12`; the script default of 40 overfits) | 25 (`--epochs 25`) | 15 × 12,000 crops |
 | Batch | 16, lr 1e-4 (backbone 1.5e-4) | 16 (Ultralytics accumulates to an effective 64) | 64 |
-| LR schedule | cosine, 1 warm-up epoch (default "step" would never decay within 40 epochs) | cosine | one-cycle |
+| LR schedule | cosine, 1 warm-up epoch (default "step" would never decay) | cosine | one-cycle |
 | Augmentation | h-flip, brightness/contrast, colour shift (day/night/rain); no rotation or v-flip | mosaic (off last 10 epochs), h-flip, HSV, milder zoom (`scale` 0.3) | random box shift/resize, h-flip, colour jitter |
 | Imbalance | repeat-factor oversampling in `prepare_data.py` | same | rare classes sampled more (`--balance 0.5`) |
-| Notes | EMA weights, best epoch by val mAP50:95 | | best epoch by val balanced accuracy |
+| Weights used | EMA; round 2: last epoch (`last_ema.pth`) | round 2: last epoch (`last.pt`) | best val epoch; round 2: last epoch |
 
 **Oversampling.** `prepare_data.py` copies every train image that contains a rare class 2–4 times
 (repeat-factor sampling, `--repeat-thr 0.3`). All boxes in a copied image stay labelled, so no vehicle is
@@ -192,7 +206,8 @@ Submissions keep at most 100 boxes per image (pycocotools ignores the rest). Eve
 ## 7. Project structure
 
 ```
-docs/                    competition PDF, train.csv, sample_submission.csv, pipeline design
+docs/                    competition PDF, train.csv, sample_submission.csv, pipeline design,
+                         report.md (results write-up), pipeline_diagram.py (draws the pipeline PNG)
 original-data/           Kaggle train and test images
 src/
   common.py              paths, class names, validation cameras, scoring helpers
