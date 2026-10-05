@@ -3,8 +3,10 @@
 Take-home midterm for 2110531 Data Science and Data Engineering Tools (2026/1).
 The task is 8-class vehicle detection on Bangkok (BMA) traffic camera images, scored on Kaggle with **mAP@50** (pycocotools).
 
-**Result:** 0.703 mAP@50 on the Kaggle public leaderboard (`submissions/wbf_final_c8big_a0.4.csv`).
-The full write-up (data handling, both rounds, ablations) is in [docs/report.md](docs/report.md).
+**Result:** 0.707 mAP@50 on the Kaggle public leaderboard (`submissions/wbf_final_ext_a0.4.csv`), with the
+classifier also trained on external data; 0.703 without it (`submissions/wbf_final_c8big_a0.4.csv`).
+The full write-up (data handling, both rounds, ablations) is in [docs/report.md](docs/report.md); the external
+datasets and every keep/drop decision are in [docs/external_data.md](docs/external_data.md).
 
 ## Contents
 
@@ -161,6 +163,25 @@ python src/make_submission.py --preds wbf_final_c8big_a0.4    # -> submissions/w
 **`image_id` must be the short test file name** (`1068_20260825_060110.jpg`), which `make_submission.py`
 writes. The long Thai ids shown in `sample_submission.csv` score exactly 0 on Kaggle.
 
+### External data for the classifier (public 0.707)
+
+Nine Roboflow datasets, unzipped into `external-data/<set>/` (not in git; sources and class mapping in
+`docs/external_data.md`). Only the crop classifier uses them; the detectors stay the Round 2 models above.
+
+```
+python src/prepare_external.py --classifier runs/cls_all8/best.pt   # -> datasets/external (12,308 images, 18,867 boxes)
+
+python src/train_classifier.py --full --classes Car Motorcycle Bus Truck Tuktuk Van Pickup Songthaew \
+    --samples-per-epoch 12000 --external datasets/external/external.csv --name cls_all8_ext_full
+python src/reclassify.py --preds wbf_final --classifier runs/cls_all8_ext_full/best.pt \
+    --apply-to Car Truck Bus Pickup Songthaew Van --alpha 0.4 --splits test --out wbf_final_ext
+python src/make_submission.py --preds wbf_final_ext_a0.4      # -> submissions/wbf_final_ext_a0.4.csv (public 0.707)
+```
+
+The validation version (`train_classifier.py` without `--full`, then `reclassify.py --preds wbf_new ... --splits val`)
+scores 0.705 against 0.688 without external data. Training the detectors on external CCTV frames
+(`prepare_external_det.py`, `prepare_data.py --external`) was tested and not kept: no gain on validation.
+
 ## 5. Comparing stages (ablation)
 
 ```
@@ -207,11 +228,14 @@ Submissions keep at most 100 boxes per image (pycocotools ignores the rest). Eve
 
 ```
 docs/                    competition PDF, train.csv, sample_submission.csv, pipeline design,
-                         report.md (results write-up), pipeline_diagram.py (draws the pipeline PNG)
+                         report.md (results write-up), external_data.md (external datasets),
+                         figures/ (error analysis), pipeline_diagram.py (draws the pipeline PNG)
 original-data/           Kaggle train and test images
 src/
   common.py              paths, class names, validation cameras, scoring helpers
-  prepare_data.py        train.csv -> YOLO and RF-DETR datasets
+  prepare_data.py        train.csv -> YOLO and RF-DETR datasets (--external adds external frames)
+  prepare_external.py    Roboflow sets in external-data/ -> datasets/external (our 8 classes)
+  prepare_external_det.py  external CCTV images -> tiled 352x288 detector frames (tested, not used)
   train_rfdetr.py        detector 1
   train_yolo.py          detector 2
   train_classifier.py    crop classifier
@@ -221,6 +245,7 @@ src/
   evaluate.py            local mAP@50, ablation table, confusion matrix
   make_submission.py     Kaggle CSV
 datasets/ runs/ preds/   generated (not in git)
+external-data/           Roboflow downloads (not in git)
 submissions/             submitted CSVs
 environment.yml          conda environment
 ```

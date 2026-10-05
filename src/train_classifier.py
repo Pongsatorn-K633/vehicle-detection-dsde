@@ -10,6 +10,7 @@ Rare classes are sampled more often (weight = count^-balance). Saves runs/<name>
 """
 import argparse
 import random
+from pathlib import Path
 
 import numpy as np
 import pandas as pd
@@ -42,6 +43,9 @@ def parse_args():
     p.add_argument("--samples-per-epoch", type=int, default=6000)
     p.add_argument("--workers", type=int, default=8)
     p.add_argument("--seed", type=int, default=0)
+    p.add_argument("--external", default=None,
+                   help="extra training boxes, e.g. datasets/external/external.csv (from prepare_external.py); "
+                        "boxes re-labelled by our classifier are skipped, validation is never touched")
     return p.parse_args()
 
 
@@ -70,7 +74,8 @@ def jitter(box, rng):
 
 class CropDataset(Dataset):
     def __init__(self, df, img_size, pad, train):
-        self.items = list(zip(df.image_id, df[["x1", "y1", "x2", "y2"]].to_numpy(float), df.label))
+        paths = df.path if "path" in df else df.image_id.map(lambda f: TRAIN_IMG_DIR / f)
+        self.items = list(zip(paths, df[["x1", "y1", "x2", "y2"]].to_numpy(float), df.label))
         self.pad, self.train = pad, train
         self.tf = T.Compose([
             T.Resize((img_size, img_size)), T.RandomHorizontalFlip(), T.ColorJitter(0.3, 0.3, 0.3, 0.02),
@@ -81,8 +86,8 @@ class CropDataset(Dataset):
         return len(self.items)
 
     def __getitem__(self, i):
-        fname, box, label = self.items[i]
-        img = Image.open(TRAIN_IMG_DIR / fname).convert("RGB")
+        path, box, label = self.items[i]
+        img = Image.open(path).convert("RGB")
         if self.train:
             box = jitter(box, random)
         return self.tf(crop_box(img, box, self.pad)), label
@@ -113,6 +118,13 @@ def main():
     df["label"] = df.class_id.map({CLASS_ID[c]: i for i, c in enumerate(args.classes)})
     in_val = df.image_id.map(camera_of).isin(VAL_CAMERAS)
     train_df, val_df = (df if args.full else df[~in_val]), df[in_val]
+    if args.external:
+        ext = pd.read_csv(args.external)
+        ext = ext[(ext.relabel == 0) & ext.class_id.isin([CLASS_ID[c] for c in args.classes])].copy()
+        ext["label"] = ext.class_id.map({CLASS_ID[c]: i for i, c in enumerate(args.classes)})
+        ext["path"] = ext.image_id.map(lambda f: Path(args.external).parent / "images" / f)
+        print(f"External boxes added to train: {len(ext)}")
+        train_df = pd.concat([train_df.assign(path=train_df.image_id.map(lambda f: TRAIN_IMG_DIR / f)), ext], ignore_index=True)
     counts = train_df.label.value_counts().sort_index()
     print(pd.DataFrame({"train": counts, "val": val_df.label.value_counts().sort_index()})
           .set_axis(args.classes).to_string())

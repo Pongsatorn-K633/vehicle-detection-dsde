@@ -16,3 +16,6 @@ __pycache__/
 
 # Duplicate of the Kaggle download (same files as original-data/ and docs/)
 2110531-dsde-2026-1/
+
+# External (Roboflow) datasets, not committed (large)
+external-data/
