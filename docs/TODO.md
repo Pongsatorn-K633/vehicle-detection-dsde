@@ -54,7 +54,8 @@ About 10 Roboflow datasets with Tuktuk / Songthaew / Bus were collected (list in
 Not needed for the grade: both Kaggle parts are already at full marks (mAP ≥ 0.56 → 5 points; top 30% → 5 points).
 
 If tried anyway, before 10 Oct:
-- [ ] Ask the TA whether external data is allowed.
+- [x] Ask the TA whether external data is allowed. **Yes, allowed.** Test frames are newly labelled BMA
+      images (25–31 Aug 2026), so external sets cannot contain them.
 - [ ] Download in YOLOv8 format into `external-data/<dataset>/` (add `external-data/` to `.gitignore`).
 - [ ] Map class names to our 8 ids; fill in unlabelled vehicles with the current models (single-class datasets
       leave cars unlabelled, which would teach the detector they are background).
