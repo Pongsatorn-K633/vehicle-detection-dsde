@@ -1,10 +1,11 @@
 # Bangkok CCTV Vehicle Detection: Training Report
 
-As of 2026-10-04. Round 1 (experiment models) and Round 2 (final models) are both finished.
+As of 2026-10-05. Round 1 (experiment models), Round 2 (final models) and the external-data experiments are
+finished.
 
-**Result:** 0.703 mAP@50 on the Kaggle public leaderboard (1st place) with the Round 2 models. The Round 1
-models scored 0.637 public and 0.693 on the local validation set. Full marks for the mAP part of the grade
-start at 0.56.
+**Result:** 0.707 mAP@50 on the Kaggle public leaderboard (1st place) with the Round 2 detectors and a
+classifier also trained on external data; 0.703 without external data. The Round 1 models scored 0.637 public
+and 0.693 on the local validation set. Full marks for the mAP part of the grade start at 0.56.
 
 ## 1. Data handling
 
@@ -206,10 +207,42 @@ There is no local score: the validation cameras are now in training.
 Training on all 15 cameras added 0.066 on the public leaderboard. More camera variety is what the unseen
 test cameras need most.
 
-## 6. Next steps
+## 6. External data (details: `docs/external_data.md`)
 
-- **External data for rare classes:** about 10 Roboflow datasets with Tuktuk, Songthaew and Bus images were
-  collected. They will be tested on the Round 1 split first, so their effect can be measured on validation.
-  Main risks: other datasets name classes differently, and single-class datasets leave the other vehicles
-  in their images unlabelled, which would teach the detector that those vehicles are background.
-- **Exam report:** the Kaggle screenshot (Chapter 4) and the error analysis in 3.3 (Chapter 5).
+Nine Roboflow datasets (about 16,000 unique images) were mapped to our 8 classes; 12,308 images and 18,867
+boxes were kept. The TA confirmed external data is allowed; no external image matches our train or test images.
+
+| Experiment | Validation mAP50 | Kaggle public | Kept |
+|---|---|---|---|
+| Baseline (Round 2 setup, no external) | 0.688 | 0.7035 | |
+| A. Classifier + external crops, alpha 0.4 | 0.705 | **0.7070** | **yes** |
+| A. Classifier + external crops, alpha 0.6 (best on val) | 0.713 | 0.7019 | no |
+| B. Detectors + external CCTV frames (tiled to our scale, missing labels filled) | 0.706 (alpha 0.4) | – | no |
+
+- **The classifier gains, the detectors do not.** The classifier sees one cropped vehicle, and a pickup or van
+  looks the same from any camera. The detector learns whole scenes, and the external scenes (highways, fisheye
+  intersections, close-ups) differ from BMA CCTV, which the test set shares with our training data.
+- **Alpha 0.6 won on validation but lost on Kaggle.** On unseen cameras the classifier is less reliable, so
+  trusting it more adds false second guesses. Alpha stays at 0.4. Lesson: a setting tuned on 3 validation
+  cameras with few rare-class boxes (Van 31, Songthaew 24) can over-fit them.
+
+## 7. Error analysis: Truck, Songthaew and Car
+
+Mistakes on validation (full pipeline, alpha 0.4, score ≥ 0.3), cropped in `docs/figures/`:
+
+| Mistake | Count | What the crops show | Cause |
+|---|---|---|---|
+| Songthaew → Truck | 12 of 24 | 10 are small **green** pickup-based songthaews at camera 1066 (`err_songthaew_as_truck.jpg`) | a style missing from training: 91 of 117 training Songthaews come from camera 1426; all correct ones are the big blue type at camera 1427 (`ok_songthaew.jpg`) |
+| Truck → Songthaew | 14 | all at camera 1427: blue 6-wheel trucks with a blue tarp, often the same vehicle in consecutive frames (`err_truck_as_songthaew.jpg`) | genuinely ambiguous from above; only a few distinct vehicles |
+| Truck → Car | 24 of 284 | mostly white or dark SUVs and pickups seen from above (`err_truck_as_car.jpg`) | label inconsistency: box/canopy pickups are Truck by convention (`ours_truck_labels.jpg`) and look like cars at 352 × 288 |
+| Car → Truck | 11 | blurry; some box/canopy pickups labelled Car (`err_car_as_truck.jpg`) | the same inconsistency in reverse |
+
+Most remaining Truck errors are label ambiguity, not something more training fixes. Songthaew would need
+top-view examples of the small green type, which none of the external sets contain.
+
+## 8. Next steps
+
+- **Kaggle:** select the 0.707 and 0.703 files as the two final submissions (Kaggle closes 10 Oct 2026).
+- **Package (due 17 Oct 2026):** push the repo, upload the final weights and prepared data to Google Drive, check
+  reproducibility (`docs/TODO.md`).
+- **Exam report:** Kaggle screenshot (Chapter 4), sections 6–7 and `docs/figures/` (Chapter 5).

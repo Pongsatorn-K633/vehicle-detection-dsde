@@ -17,6 +17,7 @@ import argparse
 import json
 import math
 import shutil
+from pathlib import Path
 
 import pandas as pd
 import yaml
@@ -31,6 +32,9 @@ def parse_args():
                    help="put every camera in train; val cameras are still used for monitoring only")
     p.add_argument("--repeat-thr", type=float, default=0.3, help="t in repeat-factor sampling (0 = no oversampling)")
     p.add_argument("--max-repeat", type=int, default=4)
+    p.add_argument("--external", default=None,
+                   help="extra 352x288 train frames from prepare_external_det.py (folder with images/ and boxes.csv); "
+                        "added once each to train only, output folders get the suffix _ext")
     return p.parse_args()
 
 
@@ -45,13 +49,13 @@ def repeat_counts(names, df, thr, max_repeat):
     return {f: int(min(max_repeat, round(r_img.get(f, 1.0)))) for f in names}
 
 
-def write_yolo(out, splits, boxes_by_img):
+def write_yolo(out, splits, boxes_by_img, src_dir):
     for split, names in splits.items():
         img_dir, lbl_dir = out / "images" / split, out / "labels" / split
         img_dir.mkdir(parents=True)
         lbl_dir.mkdir(parents=True)
         for src, f in names:
-            shutil.copy2(TRAIN_IMG_DIR / src, img_dir / f)
+            shutil.copy2(src_dir.get(src, TRAIN_IMG_DIR) / src, img_dir / f)
             g = boxes_by_img.get(src)
             lines = [] if g is None else [
                 f"{r.class_id} {(r.x1 + r.x2) / 2 / 352:.6f} {(r.y1 + r.y2) / 2 / 288:.6f} "
@@ -62,7 +66,7 @@ def write_yolo(out, splits, boxes_by_img):
     (out / "data.yaml").write_text(yaml.safe_dump(data_yaml, sort_keys=False))
 
 
-def write_rfdetr(out, splits, boxes_by_img):
+def write_rfdetr(out, splits, boxes_by_img, src_dir):
     # Category ids 0..7 with a placeholder supercategory: RF-DETR then keeps class_id == category_id
     # (no Roboflow-style parent category that would shift every id by one).
     categories = [{"id": i, "name": n, "supercategory": "none"} for i, n in enumerate(CLASS_NAMES)]
@@ -71,7 +75,7 @@ def write_rfdetr(out, splits, boxes_by_img):
         d.mkdir(parents=True)
         coco = {"images": [], "annotations": [], "categories": categories}
         for img_id, (src, f) in enumerate(names):
-            shutil.copy2(TRAIN_IMG_DIR / src, d / f)
+            shutil.copy2(src_dir.get(src, TRAIN_IMG_DIR) / src, d / f)
             coco["images"].append({"id": img_id, "file_name": f, "width": 352, "height": 288})
             g = boxes_by_img.get(src)
             for r in ([] if g is None else g.itertuples()):
@@ -84,7 +88,7 @@ def write_rfdetr(out, splits, boxes_by_img):
 
 def main():
     args = parse_args()
-    suffix = "_full" if args.full else ""
+    suffix = ("_full" if args.full else "") + ("_ext" if args.external else "")
     df = load_gt()
     boxes_by_img = {k: g for k, g in df.groupby("image_id")}
     files = sorted(p.name for p in TRAIN_IMG_DIR.glob("*.jpg"))
@@ -96,12 +100,22 @@ def main():
     # (source image, written file name); copies get a '__rep<k>' suffix
     splits = {"train": [(f, f if k == 0 else f.replace(".jpg", f"__rep{k}.jpg")) for f in train for k in range(reps[f])],
               "val": [(f, f) for f in val]}
+    src_dir = {}
+    if args.external:
+        ext_dir = Path(args.external)
+        ext = pd.read_csv(ext_dir / "boxes.csv")
+        ext_imgs = sorted(p.name for p in (ext_dir / "images").glob("*.jpg"))
+        splits["train"] += [(f, f) for f in ext_imgs]
+        src_dir = {f: ext_dir / "images" for f in ext_imgs}
+        df = pd.concat([df, ext[["image_id", "class_id", "x1", "y1", "x2", "y2"]]], ignore_index=True)
+        boxes_by_img = {k: g for k, g in df.groupby("image_id")}
+        print(f"External frames added to train: {len(ext_imgs)} ({len(ext)} boxes)")
 
     for name, writer in [("yolo", write_yolo), ("rfdetr", write_rfdetr)]:
         out = DATASETS_DIR / f"{name}{suffix}"
         if out.exists():
             shutil.rmtree(out)
-        writer(out, splits, boxes_by_img)
+        writer(out, splits, boxes_by_img, src_dir)
         print(f"Wrote {out}")
 
     stats = {}
