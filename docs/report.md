@@ -244,5 +244,5 @@ top-view examples of the small green type, which none of the external sets conta
 
 - **Kaggle:** select the 0.707 and 0.703 files as the two final submissions (Kaggle closes 10 Oct 2026).
 - **Package (due 17 Oct 2026):** push the repo, upload the final weights and prepared data to Google Drive, check
-  reproducibility (`docs/TODO.md`).
+  reproducibility.
 - **Exam report:** Kaggle screenshot (Chapter 4), sections 6–7 and `docs/figures/` (Chapter 5).
