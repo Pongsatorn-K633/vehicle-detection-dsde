@@ -34,8 +34,8 @@ bash run_v2_external_data.sh --predict-only
 
 **Reproduce with training:** run the same two scripts without `--predict-only` (about 25 + 10 minutes on an
 RTX 5090; flags for smaller GPUs are at the top of each script). Version 2 also needs the external data:
-unzip `v2_external_prepared.zip` (prepared, extracts into `datasets/external/`) or `v2_external_raw_roboflow.zip`
-(raw Roboflow sets, extracts into `external-data/`) from Google Drive in the repo root.
+unzip `v2_external_prepared.zip` from Google Drive in the repo root (extracts into `datasets/external/`), or download
+the raw Roboflow sets into `external-data/` (list in `docs/external_data.md`).
 GPU training is not bit-exact, so a retrained CSV is close to, not identical to, the submitted one.
 
 **Checked on 2026-10-09** in a fresh clone with a fresh environment from `environment.yml`:
@@ -213,8 +213,8 @@ writes. The long Thai ids shown in `sample_submission.csv` score exactly 0 on Ka
 
 ### External data for the classifier (public 0.707)
 
-Nine Roboflow datasets, unzipped into `external-data/<set>/` (not in git; on Google Drive as
-`v2_external_raw_roboflow.zip`; sources and class mapping in `docs/external_data.md`). Only the crop classifier
+Nine Roboflow datasets, unzipped into `external-data/<set>/` (not in git; sources, versions and class mapping in
+`docs/external_data.md`; the prepared result is on Google Drive as `v2_external_prepared.zip`). Only the crop classifier
 uses them; the detectors stay the Round 2 models above. `prepare_external.py` needs the Round 1 classifier
 `runs/cls_all8` (it relabels the mixed external labels).
 
@@ -299,7 +299,7 @@ src/
   evaluate.py            local mAP@50, ablation table, confusion matrix
   make_submission.py     Kaggle CSV
 datasets/ runs/ preds/   generated (not in git; final weights and prepared data on Google Drive)
-external-data/           Roboflow downloads (not in git; on Google Drive)
+external-data/           Roboflow downloads (not in git; list in docs/external_data.md)
 submissions/             submitted CSVs: v1_assignment_only/, v2_external_data/, other/ (earlier submissions)
 report-and-submission/   report (Word, PDF) and the two final CSVs
 run_v1_assignment_only.sh  version 1, assignment data only (0.703)

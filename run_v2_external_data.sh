@@ -9,8 +9,8 @@
 #
 # Output: submissions/v2_external_data/wbf_final_ext_a0.4.csv
 #
-# Training needs either the prepared datasets/external/ (Google Drive) or the raw Roboflow sets unzipped into
-# external-data/<set>/ (Google Drive, or downloaded from the sources in docs/external_data.md).
+# Training needs either the prepared datasets/external/ (Google Drive: v2_external_prepared.zip) or the raw
+# Roboflow sets unzipped into external-data/<set>/ (download list in docs/external_data.md).
 set -euo pipefail
 cd "$(dirname "$0")"
 
@@ -26,6 +26,11 @@ if [[ "${1:-}" != "--predict-only" ]]; then
     if [[ -f datasets/external/external.csv ]]; then
         echo "datasets/external already exists (e.g. from Google Drive): not rebuilding"
     else
+        if [[ ! -d external-data/vehicle_car ]]; then
+            echo "No external data: unzip v2_external_prepared.zip (Google Drive) here, or download the Roboflow" \
+                 "sets into external-data/ (docs/external_data.md)" >&2
+            exit 1
+        fi
         # round-1 classifier (validation cameras held out); only used to relabel mixed external labels
         python src/train_classifier.py --classes $CLASSES --samples-per-epoch 12000 --name cls_all8
         python src/prepare_external.py --classifier runs/cls_all8/best.pt

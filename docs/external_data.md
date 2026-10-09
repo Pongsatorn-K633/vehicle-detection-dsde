@@ -21,10 +21,28 @@ Nine Roboflow datasets (YOLO export) were downloaded into `external-data/` (not 
 | `vehicle_detection_v1` | thaidetec/vehicle-detection-yg4le | 1,830 | close-up photos | 1.2 | 0.67 | poor | classifier only |
 | `classification_of_cars` | thiraphat/classification-of-cars | 7,173 | stock photos (iStock, Alamy), close-up | 1.1 | 0.76 | poor, labels unreliable | classifier only |
 | `songthaew` | (songthaew v2) | 50 | street photos, mostly red Chiang Mai type | 1.4 | 0.38 | poor | classifier only |
-| `tuktuk_detection` | vehicle-detection-8ljxf/tuk-tuk-detection | 300 | close-up, heavy HDR filter | 1.5 | 0.38 | poor | not used (Tuktuk already 0.87) |
+| `tuktuk_detection` | vehicle-detection-8ljxf/tuk-tuk-detection | 300 | close-up, heavy HDR filter | 1.5 | 0.38 | poor | classifier only |
 | `test_mlejl` | test-coqzq/test-mlejl | 155 | close-up, mostly rickshaws and sidecars | 1.6 | 0.56 | poor | a few Tuktuk / Songthaew crops |
 | `bangkok_bus` | saint70239/bangkok-bus-dataset-type2 | 1,099 | phone photos of buses | **0 (no labels)** | – | – | **not usable** |
 | *Ours (`train.csv`)* | | *2,991* | *BMA CCTV, 352 × 288, high and far* | *9.5* | *0.05* | | |
+
+**Download.** Each set is on Roboflow Universe (`https://universe.roboflow.com/<source>`), exported in
+"YOLO26" format. Unzip each download into its folder, e.g. `external-data/vehicle_car/{train,valid,test}/`.
+
+| Folder | Downloaded file (Roboflow version) |
+|---|---|
+| `vehicle_car` | `Vehicle_car.v11i.yolo26.zip` |
+| `traffic_count` | `Traffic count.v3i.yolo26.zip` |
+| `vehicle_detection_v22` | `Vehicle Detection.v22-com.yolo26.zip` |
+| `vehicle_detection_v1` | `Vehicle Detection.v1i.yolo26.zip` |
+| `classification_of_cars` | `Classification-of-cars.v3i.yolo26.zip` |
+| `songthaew` | `songthaew.v2i.yolo26.zip` |
+| `tuktuk_detection` | `Tuk Tuk detection.v2i.yolo26.zip` |
+| `test_mlejl` | `Test.v2i.yolo26.zip` |
+| `bangkok_bus` | `Bangkok-Bus-Dataset type2.v5i.yolo26.zip` |
+
+The prepared result (`datasets/external/`, what the classifier trains on) is on Google Drive as
+`v2_external_prepared.zip`, so the downloads are only needed to rerun `prepare_external.py`.
 
 Checks:
 - **No leakage:** 0 external images match any of our train or test images (perceptual hash).
