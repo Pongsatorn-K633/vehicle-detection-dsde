@@ -61,8 +61,8 @@ def write_yolo(out, splits, boxes_by_img, src_dir):
                 f"{r.class_id} {(r.x1 + r.x2) / 2 / 352:.6f} {(r.y1 + r.y2) / 2 / 288:.6f} "
                 f"{(r.x2 - r.x1) / 352:.6f} {(r.y2 - r.y1) / 288:.6f}" for r in g.itertuples()]
             (lbl_dir / f).with_suffix(".txt").write_text("\n".join(lines))
-    data_yaml = {"path": str(out.resolve()), "train": "images/train", "val": "images/val",
-                 "names": dict(enumerate(CLASS_NAMES))}
+    # no "path" key: Ultralytics then uses the folder of data.yaml, so the dataset still works after moving it
+    data_yaml = {"train": "images/train", "val": "images/val", "names": dict(enumerate(CLASS_NAMES))}
     (out / "data.yaml").write_text(yaml.safe_dump(data_yaml, sort_keys=False))
 
 
