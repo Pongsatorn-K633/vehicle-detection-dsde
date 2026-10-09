@@ -5,7 +5,7 @@ The task is 8-class vehicle detection on Bangkok (BMA) traffic camera images, sc
 
 **Result:** 0.707 mAP@50 on the Kaggle public leaderboard with the classifier also trained on external data;
 0.703 with the assignment data only. Both are final selections on Kaggle.
-The full write-up is the report in `report-and-submission/`; the external datasets and every keep/drop decision
+The full write-up is the report (submitted on MCV; a copy is in the Google Drive folder); the external datasets and every keep/drop decision
 are in [EXTERNAL_DATA.md](EXTERNAL_DATA.md).
 
 ## Two versions
@@ -310,7 +310,6 @@ src/
 datasets/ runs/ preds/   generated (not in git; final weights and prepared data on Google Drive)
 external-data/           Roboflow downloads (not in git; list in EXTERNAL_DATA.md)
 submissions/             submitted CSVs: v1_assignment_only/, v2_external_data/, other/ (earlier submissions)
-report-and-submission/   report (Word, PDF) and the two final CSVs
 run_v1_assignment_only.sh  version 1, assignment data only (0.703)
 run_v2_external_data.sh    version 2, + external data (0.707)
 environment.yml          conda environment (versions pinned)
