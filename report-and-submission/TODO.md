@@ -31,7 +31,7 @@ v1 vs v2 (same detectors, different classifier) is 0.992; round-1 models vs fina
 
 ## 3. Google Drive
 
-Folder to upload: `drive-upload/2110531_DSDE_Midterm_6970180821_Pongsatorn/` (about 6.6 GB).
+Folder to upload: `drive-upload/2110531_DSDE_Midterm_6970180821_Pongsatorn/` (about 6.3 GB, plus the code zip).
 
 - [ ] Create the folder `2110531_DSDE_Midterm_6970180821_Pongsatorn` on Drive, share it as
       "Anyone with the link can view", and copy the link.
@@ -43,6 +43,7 @@ Folder to upload: `drive-upload/2110531_DSDE_Midterm_6970180821_Pongsatorn/` (ab
 ## 4. GitHub
 
 - [x] `external-data` merged into `main` (two run scripts, README "Two versions").
+- [ ] After the Drive link is committed: `git tag -a v2-external-data main -m "Version 2 (0.707)"` (v1 tag exists).
 - [ ] Push: `git push origin main external-data --tags`.
 - [ ] Make the repository **public** (Settings → General → Danger Zone → Change visibility); it is private now.
 - [ ] Check https://github.com/Pongsatorn-K633/vehicle-detection-dsde opens while logged out.
