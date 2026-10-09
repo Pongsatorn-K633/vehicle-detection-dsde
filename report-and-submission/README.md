@@ -13,5 +13,3 @@ Package deadline: **Sat 17 Oct 2026, 23:59** (MCV). Nothing may change after sub
 MCV asks for **one Google Drive link** holding all of Part 1: (1) source code, (2) uploaded CSVs,
 (3) prepared data, (4) model weights. The folder to upload is built in `drive-upload/` (not in git);
 see its `README.txt`. The GitHub link goes in the MCV textbox as well. The report is attached on MCV as files.
-
-What is still left before submitting: [TODO.md](TODO.md).
