@@ -4,7 +4,8 @@ Take-home midterm for 2110531 Data Science and Data Engineering Tools (2026/1).
 The task is 8-class vehicle detection on Bangkok (BMA) traffic camera images, scored on Kaggle with **mAP@50** (pycocotools).
 
 **Result:** 0.707 mAP@50 on the Kaggle public leaderboard with the classifier also trained on external data;
-0.703 with the assignment data only. Both are final selections on Kaggle.
+0.703 with the assignment data only. Both are final selections on Kaggle
+([leaderboard screenshot](docs/leaderboard.jpg)).
 The full write-up (data handling, both rounds, ablations) is in [docs/report.md](docs/report.md); the external
 datasets and every keep/drop decision are in [docs/external_data.md](docs/external_data.md).
 
@@ -36,6 +37,17 @@ RTX 5090; flags for smaller GPUs are at the top of each script). Version 2 also 
 unzip `v2_external_prepared.zip` (prepared, extracts into `datasets/external/`) or `v2_external_raw_roboflow.zip`
 (raw Roboflow sets, extracts into `external-data/`) from Google Drive in the repo root.
 GPU training is not bit-exact, so a retrained CSV is close to, not identical to, the submitted one.
+
+**Checked on 2026-10-09** in a fresh clone with a fresh environment from `environment.yml`:
+
+| Run | Result |
+|---|---|
+| Both scripts with `--predict-only` (Google Drive weights) | CSVs byte-identical to the submitted ones |
+| `run_v1_assignment_only.sh`, trained from scratch | agreement mAP50 0.976 with the submitted CSV |
+| `run_v2_external_data.sh`, trained from the raw Roboflow sets | 12,308 images / 18,867 boxes as above; agreement 0.981 |
+
+Agreement = mAP50 of the new CSV scored against the submitted CSV's boxes with confidence ≥ 0.3 (the test
+labels are hidden). For scale: version 1 vs version 2 scores 0.992, the Round 1 models vs the final models 0.933.
 
 Section 4 explains each step the scripts run.
 
@@ -130,6 +142,8 @@ On an 8 GB GPU (tested on an RTX 4070 Laptop) add these flags:
 | `train_rfdetr.py` | `--batch 4 --grad-accum 4 --workers 2` | 5.2 GB, ~6 min/epoch |
 | `train_yolo.py` | `--model yolo26m.pt --batch 8 --workers 4` | 5.8 GB, ~3 min/epoch |
 | `train_classifier.py` | none | |
+
+With the run scripts, pass them as `RFDETR_ARGS="..." YOLO_ARGS="..." bash run_v1_assignment_only.sh`.
 
 **Before a long run on a new machine**, train one epoch to check memory and time, then delete the test run:
 
@@ -268,7 +282,8 @@ Submissions keep at most 100 boxes per image (pycocotools ignores the rest). Eve
 ```
 docs/                    competition PDF, train.csv, sample_submission.csv, pipeline design,
                          report.md (results write-up), external_data.md (external datasets),
-                         figures/ (error analysis), pipeline_diagram.py (draws the pipeline PNG)
+                         figures/ (error analysis), pipeline_diagram.py (draws the pipeline PNG),
+                         leaderboard.jpg (Kaggle screenshot)
 original-data/           Kaggle train and test images
 src/
   common.py              paths, class names, validation cameras, scoring helpers
