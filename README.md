@@ -34,7 +34,7 @@ Where each model's training data comes from:
 The classifier does not use the detectors' oversampled copies: it reads each Kaggle box once and balances the
 classes with its sampler (`--balance 0.5`).
 
-**Google Drive (weights and prepared data):** `<GOOGLE_DRIVE_LINK>`
+**Google Drive (weights, prepared data, CSVs, report):** https://drive.google.com/drive/folders/1NK1bobppbvLiLvBQ8lU1VcgN5gEnYd4U?usp=sharing
 
 **Reproduce without training** (about 2 minutes): set up the environment (section 3), unzip the weight files
 from Google Drive in the repo root (they extract into `runs/`), then
