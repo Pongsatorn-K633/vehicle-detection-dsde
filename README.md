@@ -144,7 +144,14 @@ python -c "import torch; print(torch.cuda.is_available(), torch.cuda.get_device_
 
 PyTorch comes from the CUDA 12.8 wheels (needed for RTX 50-series; also runs on RTX 20/30/40).
 For a GTX 10xx card change `cu128` to `cu126` in `environment.yml`.
-The images and CSVs are in the repo (`original-data/`, `docs/`), so cloning is enough.
+The competition data is already in the repo, so cloning is enough. It is the Kaggle download
+(`2110531-dsde-2026-1/`) with the same files in these places:
+
+| Kaggle download `2110531-dsde-2026-1/` | In this repo |
+|---|---|
+| `train/train/*.jpg` (2,991 images) | `original-data/train/train/` |
+| `test/test/*.jpg` (1,013 images) | `original-data/test/test/` |
+| `train.csv`, `sample_submission.csv` | `docs/` |
 
 **Hardware used for training:** RTX 5090 (32 GB), Linux. The script defaults are set for it.
 On an 8 GB GPU (tested on an RTX 4070 Laptop) add these flags:
