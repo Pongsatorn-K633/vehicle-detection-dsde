@@ -3,10 +3,41 @@
 Take-home midterm for 2110531 Data Science and Data Engineering Tools (2026/1).
 The task is 8-class vehicle detection on Bangkok (BMA) traffic camera images, scored on Kaggle with **mAP@50** (pycocotools).
 
-**Result:** 0.707 mAP@50 on the Kaggle public leaderboard (`submissions/wbf_final_ext_a0.4.csv`), with the
-classifier also trained on external data; 0.703 without it (`submissions/wbf_final_c8big_a0.4.csv`).
+**Result:** 0.707 mAP@50 on the Kaggle public leaderboard with the classifier also trained on external data;
+0.703 with the assignment data only. Both are final selections on Kaggle.
 The full write-up (data handling, both rounds, ablations) is in [docs/report.md](docs/report.md); the external
 datasets and every keep/drop decision are in [docs/external_data.md](docs/external_data.md).
+
+## Two versions
+
+Both versions use the same code in `src/` and the same two detectors. They differ only in the data the
+ConvNeXt-Tiny crop classifier is trained on.
+
+| | Version 1: assignment data only | Version 2: + external data |
+|---|---|---|
+| Classifier training data | 2,991 Kaggle train images | the same + 18,867 boxes from 9 Roboflow datasets |
+| Script | `bash run_v1_assignment_only.sh` | `bash run_v2_external_data.sh` (after version 1) |
+| Weights (Google Drive) | `shared_detectors_v1_v2.zip`, `v1_classifier.zip` | `shared_detectors_v1_v2.zip`, `v2_classifier.zip` |
+| Submission | `submissions/v1_assignment_only/wbf_final_c8big_a0.4.csv` | `submissions/v2_external_data/wbf_final_ext_a0.4.csv` |
+| Kaggle public mAP@50 | 0.703 | **0.707** |
+
+**Google Drive (weights and prepared data):** `<GOOGLE_DRIVE_LINK>`
+
+**Reproduce without training** (about 2 minutes): set up the environment (section 3), unzip the weight files
+from Google Drive in the repo root (they extract into `runs/`), then
+
+```
+bash run_v1_assignment_only.sh --predict-only
+bash run_v2_external_data.sh --predict-only
+```
+
+**Reproduce with training:** run the same two scripts without `--predict-only` (about 25 + 10 minutes on an
+RTX 5090; flags for smaller GPUs are at the top of each script). Version 2 also needs the external data:
+unzip `v2_external_prepared.zip` (prepared, extracts into `datasets/external/`) or `v2_external_raw_roboflow.zip`
+(raw Roboflow sets, extracts into `external-data/`) from Google Drive in the repo root.
+GPU training is not bit-exact, so a retrained CSV is close to, not identical to, the submitted one.
+
+Section 4 explains each step the scripts run.
 
 ## Contents
 
@@ -157,16 +188,21 @@ python src/predict_detector.py --weights runs/y26m_e25_full/weights/last.pt --na
 python src/fuse.py --runs rfdl_e12_full y26m_e25_full --weights 2 1 --out wbf_final --splits test
 python src/reclassify.py --preds wbf_final --classifier runs/cls_all8_full/best.pt \
     --apply-to Car Truck Bus Pickup Songthaew Van --alpha 0.4 --splits test --out wbf_final_c8big
-python src/make_submission.py --preds wbf_final_c8big_a0.4    # -> submissions/wbf_final_c8big_a0.4.csv (public 0.703)
+python src/make_submission.py --preds wbf_final_c8big_a0.4 \
+    --out submissions/v1_assignment_only/wbf_final_c8big_a0.4.csv                      # public 0.703
 ```
+
+`run_v1_assignment_only.sh` runs exactly these commands.
 
 **`image_id` must be the short test file name** (`1068_20260825_060110.jpg`), which `make_submission.py`
 writes. The long Thai ids shown in `sample_submission.csv` score exactly 0 on Kaggle.
 
 ### External data for the classifier (public 0.707)
 
-Nine Roboflow datasets, unzipped into `external-data/<set>/` (not in git; sources and class mapping in
-`docs/external_data.md`). Only the crop classifier uses them; the detectors stay the Round 2 models above.
+Nine Roboflow datasets, unzipped into `external-data/<set>/` (not in git; on Google Drive as
+`v2_external_raw_roboflow.zip`; sources and class mapping in `docs/external_data.md`). Only the crop classifier
+uses them; the detectors stay the Round 2 models above. `prepare_external.py` needs the Round 1 classifier
+`runs/cls_all8` (it relabels the mixed external labels).
 
 ```
 python src/prepare_external.py --classifier runs/cls_all8/best.pt   # -> datasets/external (12,308 images, 18,867 boxes)
@@ -175,8 +211,11 @@ python src/train_classifier.py --full --classes Car Motorcycle Bus Truck Tuktuk 
     --samples-per-epoch 12000 --external datasets/external/external.csv --name cls_all8_ext_full
 python src/reclassify.py --preds wbf_final --classifier runs/cls_all8_ext_full/best.pt \
     --apply-to Car Truck Bus Pickup Songthaew Van --alpha 0.4 --splits test --out wbf_final_ext
-python src/make_submission.py --preds wbf_final_ext_a0.4      # -> submissions/wbf_final_ext_a0.4.csv (public 0.707)
+python src/make_submission.py --preds wbf_final_ext_a0.4 \
+    --out submissions/v2_external_data/wbf_final_ext_a0.4.csv                          # public 0.707
 ```
+
+`run_v2_external_data.sh` runs these commands (and trains `cls_all8` first if `datasets/external` is missing).
 
 The validation version (`train_classifier.py` without `--full`, then `reclassify.py --preds wbf_new ... --splits val`)
 scores 0.705 against 0.688 without external data. Training the detectors on external CCTV frames
@@ -244,8 +283,11 @@ src/
   reclassify.py          classifier second stage
   evaluate.py            local mAP@50, ablation table, confusion matrix
   make_submission.py     Kaggle CSV
-datasets/ runs/ preds/   generated (not in git)
-external-data/           Roboflow downloads (not in git)
-submissions/             submitted CSVs
-environment.yml          conda environment
+datasets/ runs/ preds/   generated (not in git; final weights and prepared data on Google Drive)
+external-data/           Roboflow downloads (not in git; on Google Drive)
+submissions/             submitted CSVs: v1_assignment_only/, v2_external_data/, other/ (earlier submissions)
+report-and-submission/   report (Word, PDF) and the two final CSVs
+run_v1_assignment_only.sh  version 1, assignment data only (0.703)
+run_v2_external_data.sh    version 2, + external data (0.707)
+environment.yml          conda environment (versions pinned)
 ```

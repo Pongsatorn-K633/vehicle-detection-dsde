@@ -193,7 +193,7 @@ inference 1 min). Settings, all chosen in Round 1:
 | YOLO26m | 25 epochs, early stopping off, last-epoch weights (`last.pt`) |
 | Classifier | 8 classes, last epoch |
 | Inference | flip TTA, WBF 2:1, classifier alpha 0.4 on Car/Truck/Bus/Pickup/Songthaew/Van |
-| Output | `submissions/wbf_final_c8big_a0.4.csv` |
+| Output | `submissions/v1_assignment_only/wbf_final_c8big_a0.4.csv` |
 
 The file has 99,469 boxes for all 997 scored images (at most 100 per image). Its class mix at score ≥ 0.3
 is close to the Round 1 file's (for example 5,799 vs 5,711 Car and 108 vs 116 Pickup), so nothing broke.

@@ -3,8 +3,8 @@
 # Round 2 of README section 4: RF-DETR Large + YOLO26m, flip TTA, WBF, ConvNeXt-Tiny classifier (alpha 0.4),
 # all trained on the 2,991 Kaggle train images (all 15 cameras).
 #
-#   bash run_v1_assignment_only.sh                 # train everything, then predict (~40 min on an RTX 5090)
-#   bash run_v1_assignment_only.sh --predict-only  # use the weights from Google Drive, unzipped into runs/ (~5 min)
+#   bash run_v1_assignment_only.sh                 # train everything, then predict (~25 min on an RTX 5090)
+#   bash run_v1_assignment_only.sh --predict-only  # use the weights from Google Drive, unzipped into runs/ (~1 min)
 #
 # Output: submissions/v1_assignment_only/wbf_final_c8big_a0.4.csv
 # The detector predictions (preds/wbf_final) are shared with run_v2_external_data.sh.

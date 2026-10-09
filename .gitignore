@@ -19,3 +19,6 @@ __pycache__/
 
 # External (Roboflow) datasets, not committed (large)
 external-data/
+
+# Files to upload to Google Drive (not in git)
+drive-upload/

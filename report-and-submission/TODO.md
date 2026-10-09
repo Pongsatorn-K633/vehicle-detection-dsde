@@ -1,59 +1,62 @@
 # Still to do
 
-Status on 2026-10-06: final result **0.707** public (`wbf_final_ext_a0.4.csv`), 1st place. Report drafted
-(`report.docx`, `report.pdf`). This list replaces `docs/TODO.md`.
+Status on 2026-10-09: Kaggle done (both finals ticked: 0.707 and 0.703). Run scripts, Drive folder and the
+reproducibility check done. This list replaces `docs/TODO.md`.
 
 | Deadline | What |
 |---|---|
 | **Sat 10 Oct 2026** | Kaggle closes |
-| **Sat 17 Oct 2026** | package due on MCV; GitHub and Google Drive must not change afterwards |
+| **Sat 17 Oct 2026, 23:59** | package due on MCV; GitHub and Google Drive must not change afterwards |
 
-## 1. Kaggle (before 10 Oct, 2 minutes)
+## 1. Kaggle
 
-- [ ] Submissions tab → tick both final submissions (currently only the 0.703 one is ticked):
-  - `wbf_final_ext_a0.4.csv` (public 0.707)
-  - `wbf_final_c8big_a0.4.csv` (public 0.703)
-- [ ] Take a screenshot of the **final leaderboard** for the report (step 4).
-- No more tuning on the public score: only about 50% of the test images are public.
+- [x] Both final submissions ticked: `wbf_final_ext_a0.4.csv` (0.707), `wbf_final_c8big_a0.4.csv` (0.703).
+- [ ] Optional, before it closes: submit `../repro-check/kaggle-check/repro_v1_c8big_a0.4.csv` and
+      `repro_v2_ext_a0.4.csv` (retrained from scratch) to get a real score for the reproducibility check.
+      Do not change the two ticked selections.
+- [ ] After it closes: screenshot the **Private** leaderboard (final score) for report Chapter 4.
 
-## 2. GitHub
+## 2. Reproducibility check (done 2026-10-09)
 
-The TA opens the repository's default branch (`main`). All external-data work is on the branch `external-data`.
+Fresh clone + fresh conda env from the pinned `environment.yml`:
 
-- [ ] Commit the `report-and-submission/` folder.
-- [ ] Push the branch: `git push origin external-data`.
-- [ ] Merge `external-data` into `main` and push `main`, so the TA sees the final code and README.
-- [ ] Check https://github.com/Pongsatorn-K633/vehicle-detection-dsde opens while logged out (public, or the TA added).
+| Check | Result |
+|---|---|
+| `--predict-only` with the Drive weight zips (both versions) | CSVs byte-identical to the submitted ones, ~1.5 min |
+| v1 retrained from scratch (RF-DETR at batch 8 x 2 accumulation) | agreement mAP50 0.976 with the submitted CSV, ~25 min |
+| v2 retrained from the raw Roboflow zip | 12,308 images / 18,867 boxes as documented; agreement 0.981, ~10 min |
 
-## 3. Google Drive (weights and prepared data, too large for git)
+Agreement = mAP@50 of the new CSV scored against the submitted CSV's boxes with confidence >= 0.3. For scale:
+v1 vs v2 (same detectors, different classifier) is 0.992; round-1 models vs final models is 0.933.
 
-- [ ] Zip and upload the final weights (277 MB):
-  - `runs/rfdl_e12_full/last_ema.pth` (RF-DETR Large)
-  - `runs/y26m_e25_full/weights/last.pt` (YOLO26m)
-  - `runs/cls_all8_ext_full/best.pt` (ConvNeXt-Tiny, with external data)
-- [ ] Zip and upload the prepared data: `datasets/yolo_full`, `datasets/rfdetr_full`, `datasets/external`.
-- [ ] Share both as "anyone with the link can view".
-- [ ] Paste the links into the repository README, with where to put the files to run prediction without training.
+## 3. Google Drive
 
-## 4. Report (`report.docx`)
+Folder to upload: `drive-upload/2110531_DSDE_Midterm_6970180821_Pongsatorn/` (about 6.6 GB).
 
-- [ ] Chapter 4.3: replace the red placeholder under Figure 4.1 with the final leaderboard screenshot.
-- [ ] Appendix, Table A.1: paste the two Google Drive links.
+- [ ] Create the folder `2110531_DSDE_Midterm_6970180821_Pongsatorn` on Drive, share it as
+      "Anyone with the link can view", and copy the link.
+- [ ] Put the link into `README.md` (`<GOOGLE_DRIVE_LINK>`) and report Table A.1; commit and push.
+- [ ] Build `1_source_code/vehicle-detection-dsde.zip` from the final `main` (after the link is in).
+- [ ] Copy the final `report.docx` / `report.pdf` into `5_report/`.
+- [ ] Upload everything; open the link in a private browser window to check it works.
+
+## 4. GitHub
+
+- [x] `external-data` merged into `main` (two run scripts, README "Two versions").
+- [ ] Push: `git push origin main external-data --tags`.
+- [ ] Make the repository **public** (Settings → General → Danger Zone → Change visibility); it is private now.
+- [ ] Check https://github.com/Pongsatorn-K633/vehicle-detection-dsde opens while logged out.
+
+## 5. Report (`report.docx`)
+
+- [ ] Chapter 4.3: replace the red placeholder under Figure 4.1 with the final (Private) leaderboard screenshot.
+- [ ] Appendix, Table A.1: paste the Google Drive link (prepared data and weights rows).
+- [ ] Mention the two run scripts and the reproducibility check (section 2 above) if you want.
 - [ ] Section 3.5: check the course policy on AI coding assistants; add a sentence if it has to be declared.
-- [ ] Read it through and edit anything you want in your own words.
-- [ ] Re-export the PDF from Word (File → Save As → PDF) and replace `report.pdf`.
+- [ ] Read it through, then re-export the PDF from Word and replace `report.pdf`.
 
-## 5. Reproducibility check (recommended, about 30 minutes)
+## 6. Submit on MCV (before 17 Oct, 23:59)
 
-The PDF requires the result to be reproducible and "similar (close) to the result on Kaggle".
-
-- [ ] Fresh clone into a new folder; follow README section 4 (Round 2) and "External data for the classifier".
-- [ ] Compare the new CSV with `wbf_final_ext_a0.4.csv`: about 99.5k rows, similar boxes per class at score ≥ 0.3.
-- GPU training is not bit-exact, so small differences are normal.
-
-## 6. Submit on MCV (before 17 Oct)
-
-- [ ] `report.docx` and `report.pdf`
-- [ ] the uploaded CSV(s) from this folder
-- [ ] the GitHub link and the two Google Drive links
-- [ ] After submitting, do not push to GitHub or edit the Drive files.
+- [ ] Textbox: the Google Drive link (and the GitHub link).
+- [ ] Attach files: `report.pdf` and `report.docx`.
+- [ ] Save / Submit. After that, do not push to GitHub or edit the Drive files.

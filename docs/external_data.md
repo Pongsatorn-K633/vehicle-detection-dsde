@@ -183,5 +183,5 @@ the Round 1 train split (`prepare_data.py --external`); validation unchanged. Sa
 
 | Experiment | Status |
 |---|---|
-| A. Classifier with external crops (A1b) | **kept** at alpha 0.4: val 0.688 → 0.705, public 0.7035 → **0.7070**; final file `submissions/wbf_final_ext_a0.4.csv` |
+| A. Classifier with external crops (A1b) | **kept** at alpha 0.4: val 0.688 → 0.705, public 0.7035 → **0.7070**; final file `submissions/v2_external_data/wbf_final_ext_a0.4.csv` |
 | B. Detectors with external CCTV frames | **not kept**: at alpha 0.4, 0.706 vs 0.705 (tie); new YOLO always lower |
