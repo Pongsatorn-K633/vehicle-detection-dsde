@@ -6,6 +6,7 @@
 # PyTorch comes from the CUDA 12.8 wheel index: it is the first build that supports
 # RTX 50-series (Blackwell, used for training: RTX 5090) and it also runs on RTX 20/30/40 cards.
 # For a Pascal GPU (GTX 10xx) change cu128 to cu126 below; cu128 dropped Pascal support.
+# Versions are pinned to the ones used for the Kaggle submissions.
 name: vehicle-det
 channels:
   - conda-forge
@@ -17,24 +18,27 @@ dependencies:
       - torch==2.8.0
       - torchvision==0.23.0
       # detection (YOLO26 needs ultralytics >= 8.4)
-      - ultralytics>=8.4.0
-      - rfdetr[train]==1.11.1 # RF-DETR detector (training extras = PyTorch Lightning)
-      - timm                  # ConvNeXt-Tiny crop classifier
-      - ensemble-boxes        # Weighted Boxes Fusion for ensembling / TTA
-      - sahi                  # optional sliced inference for tiny objects
+      - ultralytics==8.4.172
+      - rfdetr[train]==1.11.1       # RF-DETR detector (training extras = PyTorch Lightning)
+      - pytorch-lightning==2.6.6
+      - transformers==5.18.0
+      - supervision==0.30.6
+      - timm==1.0.30                # ConvNeXt-Tiny crop classifier
+      - ensemble-boxes==1.0.9       # Weighted Boxes Fusion for ensembling / TTA
+      - sahi==0.12.8                # optional sliced inference for tiny objects
       # evaluation: same metric as the Kaggle scorer
-      - pycocotools
+      - pycocotools==2.0.11
       # data handling / EDA
-      - numpy
-      - pandas
-      - scikit-learn          # GroupKFold by camera
-      - opencv-python
-      - pillow
-      - albumentations
-      - matplotlib
-      - seaborn
-      - tqdm
-      - pyyaml
+      - numpy==2.3.5
+      - pandas==3.0.6
+      - scikit-learn==1.9.1         # GroupKFold by camera
+      - opencv-python==5.0.0.93
+      - pillow==12.3.0
+      - albumentations==2.0.8
+      - matplotlib==3.11.2
+      - seaborn==0.13.2
+      - tqdm==4.70.1
+      - pyyaml==6.0.3
       # notebooks
       - jupyterlab
       - ipykernel
