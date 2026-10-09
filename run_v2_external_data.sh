@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Version 2: assignment data + external data for the crop classifier (Kaggle public 0.707).
 # Same detectors as version 1; only the ConvNeXt-Tiny classifier is also trained on 18,867 boxes from
-# nine Roboflow datasets (sources and class mapping: docs/external_data.md).
+# nine Roboflow datasets (sources and class mapping: EXTERNAL_DATA.md).
 #
 #   bash run_v1_assignment_only.sh                 # first: makes the shared detector predictions (preds/wbf_final)
 #   bash run_v2_external_data.sh                   # train the classifier, then predict (~10 min on an RTX 5090)
@@ -10,7 +10,7 @@
 # Output: submissions/v2_external_data/wbf_final_ext_a0.4.csv
 #
 # Training needs either the prepared datasets/external/ (Google Drive: v2_external_prepared.zip) or the raw
-# Roboflow sets unzipped into external-data/<set>/ (download list in docs/external_data.md).
+# Roboflow sets unzipped into external-data/<set>/ (download list in EXTERNAL_DATA.md).
 set -euo pipefail
 cd "$(dirname "$0")"
 
@@ -28,7 +28,7 @@ if [[ "${1:-}" != "--predict-only" ]]; then
     else
         if [[ ! -d external-data/vehicle_car ]]; then
             echo "No external data: unzip v2_external_prepared.zip (Google Drive) here, or download the Roboflow" \
-                 "sets into external-data/ (docs/external_data.md)" >&2
+                 "sets into external-data/ (EXTERNAL_DATA.md)" >&2
             exit 1
         fi
         # round-1 classifier (validation cameras held out); only used to relabel mixed external labels

@@ -14,7 +14,7 @@ __pycache__/
 .claude/
 .vscode/
 
-# Duplicate of the Kaggle download (same files as original-data/ and docs/)
+# Duplicate of the Kaggle download (same files as original-data/)
 2110531-dsde-2026-1/
 
 # External (Roboflow) datasets, not committed (large)
