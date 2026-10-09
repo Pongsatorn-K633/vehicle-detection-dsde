@@ -9,12 +9,11 @@ import pandas as pd
 
 ROOT = Path(__file__).resolve().parents[1]
 
-DATA_DIR = ROOT / "original-data"
-DOCS_DIR = ROOT / "docs"
+DATA_DIR = ROOT / "original-data"  # the Kaggle download
 TRAIN_IMG_DIR = DATA_DIR / "train" / "train"
 TEST_IMG_DIR = DATA_DIR / "test" / "test"
-TRAIN_CSV = DOCS_DIR / "train.csv"
-SAMPLE_SUB_CSV = DOCS_DIR / "sample_submission.csv"
+TRAIN_CSV = DATA_DIR / "train.csv"
+SAMPLE_SUB_CSV = DATA_DIR / "sample_submission.csv"
 
 DATASETS_DIR = ROOT / "datasets"
 YOLO_DIR = DATASETS_DIR / "yolo"

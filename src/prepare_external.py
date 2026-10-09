@@ -3,7 +3,7 @@
     python src/prepare_external.py --classifier runs/cls_all8/best.pt
 
 Reads external-data/<set>/{train,valid,test}/{images,labels} (YOLO export), maps each set's class names to ours
-with MAPPING below (decisions and reasons: docs/external_data.md), and writes
+with MAPPING below (decisions and reasons: EXTERNAL_DATA.md), and writes
   datasets/external/images/<set>__<name>.jpg   one copy per source image, long side at most --max-side
   datasets/external/external.csv               image_id, class_id, x1, y1, x2, y2 (pixels), dataset, cctv, relabel
 

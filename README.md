@@ -4,10 +4,9 @@ Take-home midterm for 2110531 Data Science and Data Engineering Tools (2026/1).
 The task is 8-class vehicle detection on Bangkok (BMA) traffic camera images, scored on Kaggle with **mAP@50** (pycocotools).
 
 **Result:** 0.707 mAP@50 on the Kaggle public leaderboard with the classifier also trained on external data;
-0.703 with the assignment data only. Both are final selections on Kaggle
-([leaderboard screenshot](docs/leaderboard.jpg)).
-The full write-up (data handling, both rounds, ablations) is in [docs/report.md](docs/report.md); the external
-datasets and every keep/drop decision are in [docs/external_data.md](docs/external_data.md).
+0.703 with the assignment data only. Both are final selections on Kaggle.
+The full write-up is the report in `report-and-submission/`; the external datasets and every keep/drop decision
+are in [EXTERNAL_DATA.md](EXTERNAL_DATA.md).
 
 ## Two versions
 
@@ -28,7 +27,7 @@ Where each model's training data comes from:
 |---|---|---|
 | RF-DETR Large | `datasets/rfdetr_full/` (COCO format) | `prepare_data.py --full` |
 | YOLO26m | `datasets/yolo_full/` (YOLO format, same images and boxes) | `prepare_data.py --full` |
-| Classifier, version 1 | box crops cut from `original-data/train/` using the boxes in `docs/train.csv`, during training; nothing is saved | `train_classifier.py` |
+| Classifier, version 1 | box crops cut from `original-data/train/` using the boxes in `original-data/train.csv`, during training; nothing is saved | `train_classifier.py` |
 | Classifier, version 2 | the same + crops from `datasets/external/` (`external.csv`, `images/`) | `prepare_external.py`, then `train_classifier.py --external` |
 
 The classifier does not use the detectors' oversampled copies: it reads each Kaggle box once and balances the
@@ -47,7 +46,7 @@ bash run_v2_external_data.sh --predict-only
 **Reproduce with training:** run the same two scripts without `--predict-only` (about 25 + 10 minutes on an
 RTX 5090; flags for smaller GPUs are at the top of each script). Version 2 also needs the external data:
 unzip `v2_external_prepared.zip` from Google Drive in the repo root (extracts into `datasets/external/`), or download
-the raw Roboflow sets into `external-data/` (list in `docs/external_data.md`).
+the raw Roboflow sets into `external-data/` (list in `EXTERNAL_DATA.md`).
 GPU training is not bit-exact, so a retrained CSV is close to, not identical to, the submitted one.
 
 **Checked on 2026-10-09** in a fresh clone with a fresh environment from `environment.yml`:
@@ -109,7 +108,7 @@ Things to know about the data:
 
 ## 2. Pipeline
 
-![pipeline](docs/thai_vehicle_detection_pipeline.png)
+![pipeline](pipeline.png)
 
 | Stage | What it does | Script |
 |---|---|---|
@@ -120,12 +119,10 @@ Things to know about the data:
 | **Weighted Boxes Fusion** | Merges all 4 prediction sets (2 models × original/flipped) into one, RF-DETR weighted 2, YOLO 1 | `fuse.py` |
 | **ConvNeXt-Tiny classifier** | Knows all 8 classes; looks again at boxes labelled Car / Truck / Bus / Pickup / Songthaew / Van and adds a second guess (alpha 0.4) | `train_classifier.py`, `reclassify.py` |
 
-The diagram is drawn by `docs/pipeline_diagram.py`.
-
 Each stage writes its predictions to `preds/<name>/val.csv` and `test.csv`, so every stage can be scored on
 its own and a stage is kept only if it raises the validation mAP50.
 
-Two changes from the original design in `docs/pipeline.md`, both because of how mAP@50 is computed:
+Two changes from the first design, both because of how mAP@50 is computed:
 
 - **The classifier adds a second guess instead of replacing the label.** mAP ranks boxes by score, so a box can be
   sent twice: with the detector's label and with the classifier's label, each with its own score. A wrong
@@ -144,14 +141,9 @@ python -c "import torch; print(torch.cuda.is_available(), torch.cuda.get_device_
 
 PyTorch comes from the CUDA 12.8 wheels (needed for RTX 50-series; also runs on RTX 20/30/40).
 For a GTX 10xx card change `cu128` to `cu126` in `environment.yml`.
-The competition data is already in the repo, so cloning is enough. It is the Kaggle download
-(`2110531-dsde-2026-1/`) with the same files in these places:
-
-| Kaggle download `2110531-dsde-2026-1/` | In this repo |
-|---|---|
-| `train/train/*.jpg` (2,991 images) | `original-data/train/train/` |
-| `test/test/*.jpg` (1,013 images) | `original-data/test/test/` |
-| `train.csv`, `sample_submission.csv` | `docs/` |
+The competition data is already in the repo, so cloning is enough: `original-data/` is the Kaggle download
+(`2110531-dsde-2026-1/`) under another name, with the same files (`train/train/*.jpg`, `test/test/*.jpg`,
+`train.csv`, `sample_submission.csv`).
 
 **Hardware used for training:** RTX 5090 (32 GB), Linux. The script defaults are set for it.
 On an 8 GB GPU (tested on an RTX 4070 Laptop) add these flags:
@@ -180,7 +172,7 @@ and **final** models (same settings, trained on all 15 cameras, used for Kaggle)
 
 The epoch counts are short on purpose. Round 2 has no clean validation set, so it uses the **last** epoch;
 in round 1, RF-DETR at 40 epochs peaked at epoch 6 and then lost 0.06 mAP50, while 12 epochs ends at its best
-(details in `docs/report.md`, section 3.5).
+(details in the report, section 3.5).
 
 ### Round 1: experiment models (about 25 minutes on the RTX 5090)
 
@@ -233,7 +225,7 @@ writes. The long Thai ids shown in `sample_submission.csv` score exactly 0 on Ka
 ### External data for the classifier (public 0.707)
 
 Nine Roboflow datasets, unzipped into `external-data/<set>/` (not in git; sources, versions and class mapping in
-`docs/external_data.md`; the prepared result is on Google Drive as `v2_external_prepared.zip`). Only the crop classifier
+`EXTERNAL_DATA.md`; the prepared result is on Google Drive as `v2_external_prepared.zip`). Only the crop classifier
 uses them; the detectors stay the Round 2 models above. `prepare_external.py` needs the Round 1 classifier
 `runs/cls_all8` (it relabels the mixed external labels).
 
@@ -299,11 +291,9 @@ Submissions keep at most 100 boxes per image (pycocotools ignores the rest). Eve
 ## 7. Project structure
 
 ```
-docs/                    competition PDF, train.csv, sample_submission.csv, pipeline design,
-                         report.md (results write-up), external_data.md (external datasets),
-                         figures/ (error analysis), pipeline_diagram.py (draws the pipeline PNG),
-                         leaderboard.jpg (Kaggle screenshot)
-original-data/           Kaggle train and test images
+original-data/           the Kaggle download: train and test images, train.csv, sample_submission.csv
+EXTERNAL_DATA.md         external datasets: sources, class mapping, experiments
+pipeline.png             pipeline diagram
 src/
   common.py              paths, class names, validation cameras, scoring helpers
   prepare_data.py        train.csv -> YOLO and RF-DETR datasets (--external adds external frames)
@@ -318,7 +308,7 @@ src/
   evaluate.py            local mAP@50, ablation table, confusion matrix
   make_submission.py     Kaggle CSV
 datasets/ runs/ preds/   generated (not in git; final weights and prepared data on Google Drive)
-external-data/           Roboflow downloads (not in git; list in docs/external_data.md)
+external-data/           Roboflow downloads (not in git; list in EXTERNAL_DATA.md)
 submissions/             submitted CSVs: v1_assignment_only/, v2_external_data/, other/ (earlier submissions)
 report-and-submission/   report (Word, PDF) and the two final CSVs
 run_v1_assignment_only.sh  version 1, assignment data only (0.703)
