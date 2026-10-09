@@ -16,11 +16,23 @@ ConvNeXt-Tiny crop classifier is trained on.
 
 | | Version 1: assignment data only | Version 2: + external data |
 |---|---|---|
-| Classifier training data | 2,991 Kaggle train images | the same + 18,867 boxes from 9 Roboflow datasets |
+| Classifier training data | 27,396 boxes of the 2,991 Kaggle train images | the same + 16,828 boxes from 8 Roboflow datasets |
 | Script | `bash run_v1_assignment_only.sh` | `bash run_v2_external_data.sh` (after version 1) |
 | Weights (Google Drive) | `shared_detectors_v1_v2.zip`, `v1_classifier.zip` | `shared_detectors_v1_v2.zip`, `v2_classifier.zip` |
 | Submission | `submissions/v1_assignment_only/wbf_final_c8big_a0.4.csv` | `submissions/v2_external_data/wbf_final_ext_a0.4.csv` |
 | Kaggle public mAP@50 | 0.703 | **0.707** |
+
+Where each model's training data comes from:
+
+| Model | Training data | Made by |
+|---|---|---|
+| RF-DETR Large | `datasets/rfdetr_full/` (COCO format) | `prepare_data.py --full` |
+| YOLO26m | `datasets/yolo_full/` (YOLO format, same images and boxes) | `prepare_data.py --full` |
+| Classifier, version 1 | box crops cut from `original-data/train/` using the boxes in `docs/train.csv`, during training; nothing is saved | `train_classifier.py` |
+| Classifier, version 2 | the same + crops from `datasets/external/` (`external.csv`, `images/`) | `prepare_external.py`, then `train_classifier.py --external` |
+
+The classifier does not use the detectors' oversampled copies: it reads each Kaggle box once and balances the
+classes with its sampler (`--balance 0.5`).
 
 **Google Drive (weights and prepared data):** `<GOOGLE_DRIVE_LINK>`
 
