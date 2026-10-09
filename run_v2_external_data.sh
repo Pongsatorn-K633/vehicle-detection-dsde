@@ -4,7 +4,7 @@
 # nine Roboflow datasets (sources and class mapping: docs/external_data.md).
 #
 #   bash run_v1_assignment_only.sh                 # first: makes the shared detector predictions (preds/wbf_final)
-#   bash run_v2_external_data.sh                   # train the classifier, then predict (~15 min on an RTX 5090)
+#   bash run_v2_external_data.sh                   # train the classifier, then predict (~10 min on an RTX 5090)
 #   bash run_v2_external_data.sh --predict-only    # use the classifier from Google Drive, unzipped into runs/
 #
 # Output: submissions/v2_external_data/wbf_final_ext_a0.4.csv
