@@ -24,14 +24,14 @@ Fresh clone + fresh conda env from the pinned `environment.yml`:
 |---|---|
 | `--predict-only` with the Drive weight zips (both versions) | CSVs byte-identical to the submitted ones, ~1.5 min |
 | v1 retrained from scratch (RF-DETR at batch 8 x 2 accumulation) | agreement mAP50 0.976 with the submitted CSV, ~25 min |
-| v2 retrained from the raw Roboflow zip | 12,308 images / 18,867 boxes as documented; agreement 0.981, ~10 min |
+| v2 retrained from the raw Roboflow sets | 12,308 images / 18,867 boxes as documented; agreement 0.981, ~10 min |
 
 Agreement = mAP@50 of the new CSV scored against the submitted CSV's boxes with confidence >= 0.3. For scale:
 v1 vs v2 (same detectors, different classifier) is 0.992; round-1 models vs final models is 0.933.
 
 ## 3. Google Drive
 
-Folder to upload: `drive-upload/2110531_DSDE_Midterm_6970180821_Pongsatorn/` (about 6.3 GB, plus the code zip).
+Folder to upload: `drive-upload/2110531_DSDE_Midterm_6970180821_Pongsatorn/` (about 2.5 GB, plus the code zip).
 
 - [ ] Create the folder `2110531_DSDE_Midterm_6970180821_Pongsatorn` on Drive, share it as
       "Anyone with the link can view", and copy the link.
