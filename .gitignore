@@ -1,8 +1,8 @@
-# Generated datasets, training runs and predictions (folders kept in git via .gitkeep only)
+# Generated datasets, training runs and predictions (folders kept in git via .gitkeep / datasets/README.txt only)
 datasets/*
 runs/*
 preds/*
-!datasets/.gitkeep
+!datasets/README.txt
 !runs/.gitkeep
 !preds/.gitkeep
 

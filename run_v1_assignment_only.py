@@ -7,6 +7,7 @@ all trained on the 2,991 Kaggle train images (all 15 cameras).
     python run_v1_assignment_only.py                      # train everything, then predict (~25 min on an RTX 5090)
     python run_v1_assignment_only.py --predict-only       # use the submitted weights in weights/ (~1 min)
     python run_v1_assignment_only.py --predict-only runs  # predict again with weights you trained (runs/)
+    python run_v1_assignment_only.py --train-only         # only train (writes runs/); predict later with --predict-only runs
 
 Training writes to runs/ and predicts with those new weights; weights/ (the submitted ones) is never touched.
 
@@ -39,8 +40,10 @@ def run(*args):
 
 def parse_args():
     p = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    p.add_argument("--predict-only", nargs="?", const="weights", default=None, metavar="WEIGHTS_DIR",
-                   help="skip training; predict with weights/ (default) or the given folder, e.g. runs")
+    mode = p.add_mutually_exclusive_group()
+    mode.add_argument("--predict-only", nargs="?", const="weights", default=None, metavar="WEIGHTS_DIR",
+                      help="skip training; predict with weights/ (default) or the given folder, e.g. runs")
+    mode.add_argument("--train-only", action="store_true", help="only train (writes runs/), do not predict")
     p.add_argument("--rfdetr-args", default=os.environ.get("RFDETR_ARGS", ""), help="extra train_rfdetr.py flags")
     p.add_argument("--yolo-args", default=os.environ.get("YOLO_ARGS", ""), help="extra train_yolo.py flags")
     return p.parse_args()
@@ -61,6 +64,9 @@ def main():
             "--patience", "100", "--name", "y26m_e25_full", *shlex.split(args.yolo_args))
         run("src/train_classifier.py", "--full", "--classes", *CLASSES, "--samples-per-epoch", "12000",
             "--name", "cls_all8_full")
+        if args.train_only:
+            print("Training done: weights in runs/. Predict with: python run_v1_assignment_only.py --predict-only runs")
+            return
 
     run("src/predict_detector.py", "--weights", f"{w}/rfdl_e12_full/last_ema.pth", "--name", "rfdl_e12_full",
         "--splits", "test")

@@ -9,41 +9,92 @@ data only. Both are final selections on Kaggle; Kaggle counts the better private
 The full write-up is the report (submitted on MCV; a copy is in the Google Drive folder); the external datasets and every keep/drop decision
 are in [EXTERNAL_DATA.md](EXTERNAL_DATA.md).
 
-## Quick start: check that the code runs
+## Quick start for TAs
 
-This predicts the test set with the trained weights included in `weights/`; no training and no downloads.
-The commands are the same on Windows, macOS and Linux.
+The ZIP contains everything: the code, the Kaggle data (`original-data/`), the trained weights (`weights/`) and
+the prepared training data (`datasets/`). The commands are the same on Windows, macOS and Linux
+(on Linux/macOS, `bash run_v1_assignment_only.sh` with the same options does the same as the `.py`).
 
-**1. Open a terminal in the unzipped folder** (Windows: open "Anaconda Prompt", then `cd` into the folder).
+### Setup (once)
 
-**2. Create the environment** (once)
+**S1. Open a terminal in the unzipped folder** (Windows: open "Anaconda Prompt", then `cd` into the folder).
+
+**S2. Create the environment**
 
 ```
 conda env create -f environment.yml
 conda activate vehicle-det
 ```
 
-**3. Run version 1, then version 2** (about 1 minute each on our GPU)
+Output: a conda environment named `vehicle-det`; the prompt then starts with `(vehicle-det)`.
+
+### Test: predict with the included trained weights (about 2 minutes)
+
+**Data preparation: none.** The test images are already in `original-data/test/test/`.
+
+**T1. Version 1**
 
 ```
 python run_v1_assignment_only.py --predict-only
+```
+
+Output: `outputs/v1_assignment_only/wbf_final_c8big_a0.4.csv` (Kaggle submission format). The run prints
+`Wrote 99469 boxes for 997/997 images -> ...` near the end.
+
+**T2. Version 2** (after T1: it reuses version 1's detector predictions)
+
+```
 python run_v2_external_data.py --predict-only
 ```
 
-**4. Done** when each run prints a line like
-`Wrote 99469 boxes for 997/997 images -> ...outputs/v1_assignment_only/wbf_final_c8big_a0.4.csv`.
-The CSVs are written to `outputs/`, in the Kaggle submission format:
+Output: `outputs/v2_external_data/wbf_final_ext_a0.4.csv`. The run prints `Wrote 99467 boxes for 997/997 images -> ...`.
 
 | Version | CSV written by the run | Submitted CSV (for comparison) | Kaggle private / public mAP@50 |
 |---|---|---|---|
 | 1: assignment data only | `outputs/v1_assignment_only/wbf_final_c8big_a0.4.csv` | `submissions/v1_assignment_only/wbf_final_c8big_a0.4.csv` | 0.679 / 0.703 |
 | 2: + external data | `outputs/v2_external_data/wbf_final_ext_a0.4.csv` | `submissions/v2_external_data/wbf_final_ext_a0.4.csv` | **0.696 / 0.707** |
 
-**Tested on:** Linux, NVIDIA RTX 5090 (32 GB, driver 595.84), CUDA 12.8, Python 3.11, PyTorch 2.8.0. There the
-CSVs are byte-identical to the submitted ones. Not tested on Windows, macOS or without an NVIDIA GPU; on other
-hardware the numbers can differ slightly. For a GTX 10xx GPU see [section 3](#3-setup).
-On Linux/macOS `bash run_v1_assignment_only.sh --predict-only` (and the same for v2) does the same thing.
-To retrain the models instead, see "How to run" below.
+### Train: train all models from scratch, then test them (about 35 minutes on an RTX 5090)
+
+Needs an NVIDIA GPU (the defaults are for 32 GB; flags for 8 GB are in [section 3](#3-setup)) and internet
+(the pretrained starting weights of RF-DETR, YOLO26m and ConvNeXt-Tiny are downloaded on first use).
+Training writes only to `runs/`; the included weights in `weights/` are never changed.
+
+**Data preparation: already done, skip it.** The ZIP includes the prepared data in `datasets/` (what it is and
+how to rebuild it: `datasets/README.txt`).
+
+**R1. Train version 1** (RF-DETR, YOLO26m and the classifier; about 25 minutes)
+
+```
+python run_v1_assignment_only.py --train-only
+```
+
+Output: `runs/rfdl_e12_full/last_ema.pth`, `runs/y26m_e25_full/weights/last.pt`, `runs/cls_all8_full/best.pt`.
+The run ends with `Training done: weights in runs/. ...`
+
+**R2. Train version 2** (the classifier with external data; about 10 minutes)
+
+```
+python run_v2_external_data.py --train-only
+```
+
+Output: `runs/cls_all8_ext_full/best.pt`. The run ends with `Training done: classifier in runs/. ...`
+
+**R3. Test the weights you trained** (same as T1 and T2, with `runs` added)
+
+```
+python run_v1_assignment_only.py --predict-only runs
+python run_v2_external_data.py --predict-only runs
+```
+
+Output: the same two CSVs in `outputs/` (replacing the ones from T1 and T2). GPU training is not bit-exact, so they
+are close to, not identical to, the submitted CSVs.
+
+To train again, delete the folders inside `runs/` first: the training scripts stop instead of overwriting a run.
+
+**Tested on:** Linux, NVIDIA RTX 5090 (32 GB, driver 595.84), CUDA 12.8, Python 3.11, PyTorch 2.8.0; there the
+test CSVs are byte-identical to the submitted ones. Not tested on Windows, macOS or without an NVIDIA GPU; on
+other hardware the numbers can differ slightly. For a GTX 10xx GPU see [section 3](#3-setup).
 
 ## Two versions
 
@@ -81,6 +132,7 @@ takes the same options. On Linux/macOS, `bash run_v1_assignment_only.sh` with th
 |---|---|---|---|
 | Reproduce the submitted CSVs | `python run_v1_assignment_only.py --predict-only` | `weights/` (submitted, in the repo) | ~1 min |
 | Train from scratch, then predict | `python run_v1_assignment_only.py` | `runs/` (written by the training) | ~25 min (v2: ~10 min) |
+| Only train (no prediction) | `python run_v1_assignment_only.py --train-only` | writes `runs/` | ~25 min (v2: ~10 min) |
 | Predict again with weights you trained | `python run_v1_assignment_only.py --predict-only runs` | `runs/` | ~1 min |
 
 Nothing has to be moved between folders: `weights/` holds the submitted weights (Git LFS, see section 3) and is

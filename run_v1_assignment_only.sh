@@ -6,6 +6,7 @@
 #   bash run_v1_assignment_only.sh                 # train everything, then predict (~25 min on an RTX 5090)
 #   bash run_v1_assignment_only.sh --predict-only  # use the submitted weights in weights/ (~1 min)
 #   bash run_v1_assignment_only.sh --predict-only runs  # predict again with weights you trained (runs/)
+#   bash run_v1_assignment_only.sh --train-only    # only train (writes runs/); predict later with --predict-only runs
 #
 # Training writes to runs/ and predicts with those new weights; weights/ (the submitted ones) is never touched.
 #
@@ -34,6 +35,10 @@ else
     python src/train_yolo.py --model yolo26m.pt --data datasets/yolo_full/data.yaml --epochs 25 --patience 100 \
         --name y26m_e25_full ${YOLO_ARGS:-}
     python src/train_classifier.py --full --classes $CLASSES --samples-per-epoch 12000 --name cls_all8_full
+    if [[ "${1:-}" == "--train-only" ]]; then
+        echo "Training done: weights in runs/. Predict with: bash run_v1_assignment_only.sh --predict-only runs"
+        exit 0
+    fi
 fi
 
 python src/predict_detector.py --weights $W/rfdl_e12_full/last_ema.pth --name rfdl_e12_full --splits test
