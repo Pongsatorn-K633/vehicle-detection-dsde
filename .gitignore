@@ -21,3 +21,8 @@ external-data/
 
 # Files to upload to Google Drive (not in git)
 drive-upload/
+
+# Local copies of the submission package, exam sheet and report screenshots (not in git)
+2110531_DSDE_Midterm_*/
+2110531_2026_1_takehome midterm exam.pdf
+internal-image/
