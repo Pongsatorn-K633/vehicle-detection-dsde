@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Version 2: assignment data + external data for the crop classifier (Kaggle public 0.707).
+# Version 2: assignment data + external data for the crop classifier (Kaggle private 0.696, public 0.707).
 # Same detectors as version 1; only the ConvNeXt-Tiny classifier is also trained on 18,867 boxes from
 # nine Roboflow datasets (sources and class mapping: EXTERNAL_DATA.md).
 #

@@ -3,8 +3,9 @@
 Take-home midterm for 2110531 Data Science and Data Engineering Tools (2026/1).
 The task is 8-class vehicle detection on Bangkok (BMA) traffic camera images, scored on Kaggle with **mAP@50** (pycocotools).
 
-**Result:** 0.707 mAP@50 on the Kaggle public leaderboard with the classifier also trained on external data;
-0.703 with the assignment data only. Both are final selections on Kaggle.
+**Result:** 0.696 mAP@50 on the Kaggle private leaderboard (final standings, rank 1) and 0.707 on the public
+leaderboard, with the classifier also trained on external data; 0.679 private / 0.703 public with the assignment
+data only. Both are final selections on Kaggle; Kaggle counts the better private score of the two.
 The full write-up is the report (submitted on MCV; a copy is in the Google Drive folder); the external datasets and every keep/drop decision
 are in [EXTERNAL_DATA.md](EXTERNAL_DATA.md).
 
@@ -19,6 +20,7 @@ ConvNeXt-Tiny crop classifier is trained on.
 | Script | `bash run_v1_assignment_only.sh` | `bash run_v2_external_data.sh` (after version 1) |
 | Weights (Google Drive) | `shared_detectors_v1_v2.zip`, `v1_classifier.zip` | `shared_detectors_v1_v2.zip`, `v2_classifier.zip` |
 | Submission | `submissions/v1_assignment_only/wbf_final_c8big_a0.4.csv` | `submissions/v2_external_data/wbf_final_ext_a0.4.csv` |
+| Kaggle private mAP@50 (final) | 0.679 | **0.696** |
 | Kaggle public mAP@50 | 0.703 | **0.707** |
 
 Where each model's training data comes from:
@@ -172,7 +174,7 @@ and **final** models (same settings, trained on all 15 cameras, used for Kaggle)
 
 The epoch counts are short on purpose. Round 2 has no clean validation set, so it uses the **last** epoch;
 in round 1, RF-DETR at 40 epochs peaked at epoch 6 and then lost 0.06 mAP50, while 12 epochs ends at its best
-(details in the report, section 3.5).
+(details in the report, sections 3.3 and 4.2).
 
 ### Round 1: experiment models (about 25 minutes on the RTX 5090)
 
@@ -214,7 +216,7 @@ python src/fuse.py --runs rfdl_e12_full y26m_e25_full --weights 2 1 --out wbf_fi
 python src/reclassify.py --preds wbf_final --classifier runs/cls_all8_full/best.pt \
     --apply-to Car Truck Bus Pickup Songthaew Van --alpha 0.4 --splits test --out wbf_final_c8big
 python src/make_submission.py --preds wbf_final_c8big_a0.4 \
-    --out submissions/v1_assignment_only/wbf_final_c8big_a0.4.csv                      # public 0.703
+    --out submissions/v1_assignment_only/wbf_final_c8big_a0.4.csv                      # public 0.703, private 0.679
 ```
 
 `run_v1_assignment_only.sh` runs exactly these commands.
@@ -222,7 +224,7 @@ python src/make_submission.py --preds wbf_final_c8big_a0.4 \
 **`image_id` must be the short test file name** (`1068_20260825_060110.jpg`), which `make_submission.py`
 writes. The long Thai ids shown in `sample_submission.csv` score exactly 0 on Kaggle.
 
-### External data for the classifier (public 0.707)
+### External data for the classifier (public 0.707, private 0.696)
 
 Nine Roboflow datasets, unzipped into `external-data/<set>/` (not in git; sources, versions and class mapping in
 `EXTERNAL_DATA.md`; the prepared result is on Google Drive as `v2_external_prepared.zip`). Only the crop classifier
@@ -237,7 +239,7 @@ python src/train_classifier.py --full --classes Car Motorcycle Bus Truck Tuktuk 
 python src/reclassify.py --preds wbf_final --classifier runs/cls_all8_ext_full/best.pt \
     --apply-to Car Truck Bus Pickup Songthaew Van --alpha 0.4 --splits test --out wbf_final_ext
 python src/make_submission.py --preds wbf_final_ext_a0.4 \
-    --out submissions/v2_external_data/wbf_final_ext_a0.4.csv                          # public 0.707
+    --out submissions/v2_external_data/wbf_final_ext_a0.4.csv                          # public 0.707, private 0.696
 ```
 
 `run_v2_external_data.sh` runs these commands (and trains `cls_all8` first if `datasets/external` is missing).
@@ -310,7 +312,7 @@ src/
 datasets/ runs/ preds/   generated (not in git; final weights and prepared data on Google Drive)
 external-data/           Roboflow downloads (not in git; list in EXTERNAL_DATA.md)
 submissions/             submitted CSVs: v1_assignment_only/, v2_external_data/, other/ (earlier submissions)
-run_v1_assignment_only.sh  version 1, assignment data only (0.703)
-run_v2_external_data.sh    version 2, + external data (0.707)
+run_v1_assignment_only.sh  version 1, assignment data only (private 0.679, public 0.703)
+run_v2_external_data.sh    version 2, + external data (private 0.696, public 0.707)
 environment.yml          conda environment (versions pinned)
 ```

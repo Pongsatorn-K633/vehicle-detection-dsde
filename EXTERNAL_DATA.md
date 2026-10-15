@@ -152,13 +152,13 @@ Alpha sweeps: A1 0.2 → 0.690, 0.4 → 0.703, 0.6 → 0.710, 0.7 → 0.711, 0.8
 (table below), so the final setting is **alpha 0.4**, the same as before external data: the classifier is less
 reliable on the unseen test cameras than on our validation cameras, and should not be trusted more.
 
-Kaggle public scores (same Round 2 detectors, only the classifier and alpha change):
+Kaggle scores (same Round 2 detectors, only the classifier and alpha change; private = final standings):
 
-| File | Classifier | Alpha | Val mAP50 | Public |
-|---|---|---|---|---|
-| `wbf_final_c8big_a0.4.csv` | no external | 0.4 | 0.688 | 0.7035 |
-| **`wbf_final_ext_a0.4.csv`** | **external (A1b)** | **0.4** | **0.705** | **0.7070** |
-| `wbf_final_ext_a0.6.csv` | external (A1b) | 0.6 | 0.713 | 0.7019 |
+| File | Classifier | Alpha | Val mAP50 | Public | Private |
+|---|---|---|---|---|---|
+| `wbf_final_c8big_a0.4.csv` | no external | 0.4 | 0.688 | 0.7035 | 0.6787 |
+| **`wbf_final_ext_a0.4.csv`** | **external (A1b)** | **0.4** | **0.705** | **0.7070** | **0.6960** |
+| `wbf_final_ext_a0.6.csv` | external (A1b) | 0.6 | 0.713 | 0.7019 | 0.6936 |
 
 Per class on validation, A1b at alpha 0.6 against the previous classifier at 0.4:
 
@@ -201,5 +201,5 @@ the Round 1 train split (`prepare_data.py --external`); validation unchanged. Sa
 
 | Experiment | Status |
 |---|---|
-| A. Classifier with external crops (A1b) | **kept** at alpha 0.4: val 0.688 → 0.705, public 0.7035 → **0.7070**; final file `submissions/v2_external_data/wbf_final_ext_a0.4.csv` |
+| A. Classifier with external crops (A1b) | **kept** at alpha 0.4: val 0.688 → 0.705, public 0.7035 → **0.7070**, private 0.6787 → **0.6960**; final file `submissions/v2_external_data/wbf_final_ext_a0.4.csv` |
 | B. Detectors with external CCTV frames | **not kept**: at alpha 0.4, 0.706 vs 0.705 (tie); new YOLO always lower |

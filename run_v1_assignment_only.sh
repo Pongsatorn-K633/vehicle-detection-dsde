@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Version 1: assignment data only (Kaggle public 0.703).
+# Version 1: assignment data only (Kaggle private 0.679, public 0.703).
 # Round 2 of README section 4: RF-DETR Large + YOLO26m, flip TTA, WBF, ConvNeXt-Tiny classifier (alpha 0.4),
 # all trained on the 2,991 Kaggle train images (all 15 cameras).
 #
