@@ -363,7 +363,7 @@ preds/                   intermediate predictions of each step (not in git)
 datasets/                generated training data (not in git; prepared data on Google Drive)
 external-data/           Roboflow downloads (not in git; list in EXTERNAL_DATA.md)
 submissions/             submitted CSVs: v1_assignment_only/, v2_external_data/, other/ (earlier submissions)
-outputs/                 CSVs written by the run scripts (not in git)
+outputs/                 CSVs written by the run scripts (folder in git, CSVs not)
 run_v1_assignment_only.py  version 1, assignment data only (private 0.679, public 0.703); .sh does the same
 run_v2_external_data.py    version 2, + external data (private 0.696, public 0.707); .sh does the same
 environment.yml          conda environment (versions pinned)

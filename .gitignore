@@ -6,8 +6,9 @@ preds/*
 !runs/.gitkeep
 !preds/.gitkeep
 
-# CSVs written by the run scripts (the submitted ones are in submissions/)
-outputs/
+# CSVs written by the run scripts (the submitted ones are in submissions/); folder kept via .gitkeep
+outputs/*
+!outputs/.gitkeep
 
 # Weights: only the submitted ones in weights/ are committed (Git LFS, see .gitattributes)
 *.pt
