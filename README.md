@@ -86,6 +86,8 @@ Section 4 explains each step the scripts run.
 | Labelled boxes | 27,396 (average 9.5 per image, maximum 48) |
 | Cameras | 15 in train, 5 different ones in test (1068, 1072, 1192, 1439, 227) |
 
+`python src/stats.py` prints these numbers, the class table below and the box-size statistics.
+
 **Train / validation / test split.** Validation is taken from the labelled training images by holding out whole cameras (**1066, 1427, 172**), because the test set uses cameras that never appear in train.
 
 | ID | Class | All train boxes | Train split | Val split | Test* |
@@ -298,6 +300,7 @@ EXTERNAL_DATA.md         external datasets: sources, class mapping, experiments
 pipeline.png             pipeline diagram
 src/
   common.py              paths, class names, validation cameras, scoring helpers
+  stats.py               dataset statistics of the report (section 2.1)
   prepare_data.py        train.csv -> YOLO and RF-DETR datasets (--external adds external frames)
   prepare_external.py    Roboflow sets in external-data/ -> datasets/external (our 8 classes)
   prepare_external_det.py  external CCTV images -> tiled 352x288 detector frames (tested, not used)
