@@ -4,7 +4,9 @@
 # all trained on the 2,991 Kaggle train images (all 15 cameras).
 #
 #   bash run_v1_assignment_only.sh                 # train everything, then predict (~25 min on an RTX 5090)
-#   bash run_v1_assignment_only.sh --predict-only  # use the weights from Google Drive, unzipped into runs/ (~1 min)
+#   bash run_v1_assignment_only.sh --predict-only  # use the submitted weights in weights/ (~1 min)
+#
+# Training writes to runs/ and predicts with those new weights; weights/ (the submitted ones) is never touched.
 #
 # Output: submissions/v1_assignment_only/wbf_final_c8big_a0.4.csv
 # The detector predictions (preds/wbf_final) are shared with run_v2_external_data.sh.
@@ -17,7 +19,10 @@ cd "$(dirname "$0")"
 CLASSES="Car Motorcycle Bus Truck Tuktuk Van Pickup Songthaew"
 RECHECK="Car Truck Bus Pickup Songthaew Van"
 
-if [[ "${1:-}" != "--predict-only" ]]; then
+W=runs  # weights to predict with: freshly trained (runs/) or submitted (weights/)
+if [[ "${1:-}" == "--predict-only" ]]; then
+    W=weights
+else
     if [[ -f datasets/rfdetr_full/train/_annotations.coco.json && -f datasets/yolo_full/data.yaml ]]; then
         echo "datasets/rfdetr_full and datasets/yolo_full already exist (e.g. from Google Drive): not rebuilding"
     else
@@ -29,9 +34,9 @@ if [[ "${1:-}" != "--predict-only" ]]; then
     python src/train_classifier.py --full --classes $CLASSES --samples-per-epoch 12000 --name cls_all8_full
 fi
 
-python src/predict_detector.py --weights runs/rfdl_e12_full/last_ema.pth --name rfdl_e12_full --splits test
-python src/predict_detector.py --weights runs/y26m_e25_full/weights/last.pt --name y26m_e25_full --splits test
+python src/predict_detector.py --weights $W/rfdl_e12_full/last_ema.pth --name rfdl_e12_full --splits test
+python src/predict_detector.py --weights $W/y26m_e25_full/weights/last.pt --name y26m_e25_full --splits test
 python src/fuse.py --runs rfdl_e12_full y26m_e25_full --weights 2 1 --out wbf_final --splits test
-python src/reclassify.py --preds wbf_final --classifier runs/cls_all8_full/best.pt \
+python src/reclassify.py --preds wbf_final --classifier $W/cls_all8_full/best.pt \
     --apply-to $RECHECK --alpha 0.4 --splits test --out wbf_final_c8big
 python src/make_submission.py --preds wbf_final_c8big_a0.4 --out submissions/v1_assignment_only/wbf_final_c8big_a0.4.csv

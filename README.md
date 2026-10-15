@@ -37,27 +37,30 @@ classes with its sampler (`--balance 0.5`).
 
 **Google Drive (weights, prepared data, CSVs, report):** https://drive.google.com/drive/folders/1NK1bobppbvLiLvBQ8lU1VcgN5gEnYd4U?usp=sharing
 
-**Reproduce without training** (about 2 minutes): set up the environment (section 3). The final weights are in
-the repo under `runs/` (Git LFS, see section 3; the same files are on Google Drive as zips that extract into
-`runs/`), then
+**Reproduce without training** (about 2 minutes): set up the environment (section 3), then
 
 ```
 bash run_v1_assignment_only.sh --predict-only
 bash run_v2_external_data.sh --predict-only
 ```
 
-**Reproduce with training:** move the committed `runs/` aside first (`mv runs runs_submitted`; the training
-scripts refuse to overwrite an existing run folder), then run the same two scripts without `--predict-only` (about 25 + 10 minutes on an
-RTX 5090; flags for smaller GPUs are at the top of each script). Version 2 also needs the external data:
+`--predict-only` uses the submitted weights in `weights/` (Git LFS, see section 3; the same files are on Google
+Drive as zips, which extract into `runs/`: rename that to `weights/`).
+
+**Reproduce with training:** run the same two scripts without `--predict-only` (about 25 + 10 minutes on an
+RTX 5090; flags for smaller GPUs are at the top of each script). Training writes new weights to `runs/` and
+predicts with them; the submitted weights in `weights/` are not touched. Version 2 also needs the external data:
 unzip `v2_external_prepared.zip` from Google Drive in the repo root (extracts into `datasets/external/`), or download
 the raw Roboflow sets into `external-data/` (list in `EXTERNAL_DATA.md`).
+Both modes overwrite the committed CSVs in `preds/` and `submissions/`; `git checkout -- preds submissions`
+restores the submitted ones.
 GPU training is not bit-exact, so a retrained CSV is close to, not identical to, the submitted one.
 
 **Checked on 2026-10-09** in a fresh clone with a fresh environment from `environment.yml`:
 
 | Run | Result |
 |---|---|
-| Both scripts with `--predict-only` (Google Drive weights) | CSVs byte-identical to the submitted ones |
+| Both scripts with `--predict-only` (submitted weights) | CSVs byte-identical to the submitted ones |
 | `run_v1_assignment_only.sh`, trained from scratch | agreement mAP50 0.976 with the submitted CSV |
 | `run_v2_external_data.sh`, trained from the raw Roboflow sets | the same 16,828 external boxes for the classifier; agreement 0.981 |
 
@@ -150,7 +153,7 @@ For a GTX 10xx card change `cu128` to `cu126` in `environment.yml`.
 The competition data is already in the repo, so cloning is enough: `original-data/` is the Kaggle download
 (`2110531-dsde-2026-1/`) under another name, with the same files (`train/train/*.jpg`, `test/test/*.jpg`,
 `train.csv`, `sample_submission.csv`).
-The final weights in `runs/` are stored with Git LFS: install it (`git lfs install`) before cloning, or run
+The submitted weights in `weights/` are stored with Git LFS: install it (`git lfs install`) before cloning, or run
 `git lfs pull` after cloning; without it the `.pt`/`.pth` files are small text pointers and loading them fails.
 The detector predictions of the submitted runs are in `preds/`.
 
@@ -316,7 +319,8 @@ src/
   reclassify.py          classifier second stage
   evaluate.py            local mAP@50, ablation table, confusion matrix
   make_submission.py     Kaggle CSV
-runs/                    final weights (Git LFS); other training output is not in git
+weights/                 submitted weights (Git LFS), used by --predict-only
+runs/                    training output (not in git)
 preds/                   detector and fused predictions of the submitted runs
 datasets/                generated training data (not in git; prepared data on Google Drive)
 external-data/           Roboflow downloads (not in git; list in EXTERNAL_DATA.md)

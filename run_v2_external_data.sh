@@ -3,9 +3,10 @@
 # Same detectors as version 1; only the ConvNeXt-Tiny classifier is also trained on 16,828 boxes from
 # nine Roboflow datasets (sources and class mapping: EXTERNAL_DATA.md).
 #
-#   bash run_v1_assignment_only.sh                 # first: makes the shared detector predictions (preds/wbf_final)
+#   bash run_v1_assignment_only.sh                 # first: makes the shared detector predictions (preds/wbf_final;
+#                                                  #   the submitted ones are already in the repo)
 #   bash run_v2_external_data.sh                   # train the classifier, then predict (~10 min on an RTX 5090)
-#   bash run_v2_external_data.sh --predict-only    # use the classifier from Google Drive, unzipped into runs/
+#   bash run_v2_external_data.sh --predict-only    # use the submitted classifier in weights/
 #
 # Output: submissions/v2_external_data/wbf_final_ext_a0.4.csv
 #
@@ -22,7 +23,10 @@ if [[ ! -f preds/wbf_final/test.csv ]]; then
     exit 1
 fi
 
-if [[ "${1:-}" != "--predict-only" ]]; then
+W=runs  # classifier to predict with: freshly trained (runs/) or submitted (weights/)
+if [[ "${1:-}" == "--predict-only" ]]; then
+    W=weights
+else
     if [[ -f datasets/external/external.csv ]]; then
         echo "datasets/external already exists (e.g. from Google Drive): not rebuilding"
     else
@@ -37,6 +41,6 @@ if [[ "${1:-}" != "--predict-only" ]]; then
         --external datasets/external/external.csv --name cls_all8_ext_full
 fi
 
-python src/reclassify.py --preds wbf_final --classifier runs/cls_all8_ext_full/best.pt \
+python src/reclassify.py --preds wbf_final --classifier $W/cls_all8_ext_full/best.pt \
     --apply-to $RECHECK --alpha 0.4 --splits test --out wbf_final_ext
 python src/make_submission.py --preds wbf_final_ext_a0.4 --out submissions/v2_external_data/wbf_final_ext_a0.4.csv
