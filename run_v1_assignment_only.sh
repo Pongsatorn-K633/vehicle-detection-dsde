@@ -9,7 +9,8 @@
 #
 # Training writes to runs/ and predicts with those new weights; weights/ (the submitted ones) is never touched.
 #
-# Output: submissions/v1_assignment_only/wbf_final_c8big_a0.4.csv
+# Output: outputs/v1_assignment_only/wbf_final_c8big_a0.4.csv
+# (the submitted CSV of the same name is in submissions/ and is never overwritten)
 # The detector predictions (preds/wbf_final) are shared with run_v2_external_data.sh.
 #
 # Smaller GPU (see README section 3), e.g. 8 GB:
@@ -40,4 +41,4 @@ python src/predict_detector.py --weights $W/y26m_e25_full/weights/last.pt --name
 python src/fuse.py --runs rfdl_e12_full y26m_e25_full --weights 2 1 --out wbf_final --splits test
 python src/reclassify.py --preds wbf_final --classifier $W/cls_all8_full/best.pt \
     --apply-to $RECHECK --alpha 0.4 --splits test --out wbf_final_c8big
-python src/make_submission.py --preds wbf_final_c8big_a0.4 --out submissions/v1_assignment_only/wbf_final_c8big_a0.4.csv
+python src/make_submission.py --preds wbf_final_c8big_a0.4 --out outputs/v1_assignment_only/wbf_final_c8big_a0.4.csv

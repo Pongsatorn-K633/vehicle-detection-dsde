@@ -19,7 +19,8 @@ ConvNeXt-Tiny crop classifier is trained on.
 | Classifier training data | 27,396 boxes of the 2,991 Kaggle train images | the same + 16,828 boxes from 8 Roboflow datasets |
 | Script | `bash run_v1_assignment_only.sh` | `bash run_v2_external_data.sh` (after version 1) |
 | Weights (Google Drive) | `shared_detectors_v1_v2.zip`, `v1_classifier.zip` | `shared_detectors_v1_v2.zip`, `v2_classifier.zip` |
-| Submission | `submissions/v1_assignment_only/wbf_final_c8big_a0.4.csv` | `submissions/v2_external_data/wbf_final_ext_a0.4.csv` |
+| Submitted CSV | `submissions/v1_assignment_only/wbf_final_c8big_a0.4.csv` | `submissions/v2_external_data/wbf_final_ext_a0.4.csv` |
+| Script writes | `outputs/v1_assignment_only/wbf_final_c8big_a0.4.csv` | `outputs/v2_external_data/wbf_final_ext_a0.4.csv` |
 | Kaggle private mAP@50 (final) | 0.679 | **0.696** |
 | Kaggle public mAP@50 | 0.703 | **0.707** |
 
@@ -53,8 +54,8 @@ extract into `runs/`; after unzipping them, use `--predict-only runs`.
 **Training notes:** flags for smaller GPUs are at the top of each script. Version 2 also needs the external data:
 unzip `v2_external_prepared.zip` from Google Drive in the repo root (extracts into `datasets/external/`), or download
 the raw Roboflow sets into `external-data/` (list in `EXTERNAL_DATA.md`).
-Every command in the table overwrites the committed CSVs in `preds/` and `submissions/`; `git checkout -- preds submissions`
-restores the submitted ones.
+Every command in the table writes its CSV to `outputs/` (same file names as in `submissions/`), so the submitted
+CSVs are never overwritten. The intermediate predictions in `preds/` are overwritten.
 GPU training is not bit-exact, so a retrained CSV is close to, not identical to, the submitted one.
 
 **Checked on 2026-10-09** in a fresh clone with a fresh environment from `environment.yml`:
@@ -326,6 +327,7 @@ preds/                   detector and fused predictions of the submitted runs
 datasets/                generated training data (not in git; prepared data on Google Drive)
 external-data/           Roboflow downloads (not in git; list in EXTERNAL_DATA.md)
 submissions/             submitted CSVs: v1_assignment_only/, v2_external_data/, other/ (earlier submissions)
+outputs/                 CSVs written by the run scripts (not in git)
 run_v1_assignment_only.sh  version 1, assignment data only (private 0.679, public 0.703)
 run_v2_external_data.sh    version 2, + external data (private 0.696, public 0.707)
 environment.yml          conda environment (versions pinned)

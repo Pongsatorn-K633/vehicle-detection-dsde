@@ -4,6 +4,9 @@ runs/*
 !datasets/.gitkeep
 !runs/.gitkeep
 
+# CSVs written by the run scripts (the submitted ones are in submissions/)
+outputs/
+
 # Weights: only the submitted ones in weights/ are committed (Git LFS, see .gitattributes); preds/ is committed as is
 *.pt
 *.pth

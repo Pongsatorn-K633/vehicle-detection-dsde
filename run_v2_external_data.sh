@@ -9,7 +9,8 @@
 #   bash run_v2_external_data.sh --predict-only    # use the submitted classifier in weights/
 #   bash run_v2_external_data.sh --predict-only runs  # predict again with the classifier you trained (runs/)
 #
-# Output: submissions/v2_external_data/wbf_final_ext_a0.4.csv
+# Output: outputs/v2_external_data/wbf_final_ext_a0.4.csv
+# (the submitted CSV of the same name is in submissions/ and is never overwritten)
 #
 # Training needs either the prepared datasets/external/ (Google Drive: v2_external_prepared.zip) or the raw
 # Roboflow sets unzipped into external-data/<set>/ (download list in EXTERNAL_DATA.md).
@@ -44,4 +45,4 @@ fi
 
 python src/reclassify.py --preds wbf_final --classifier $W/cls_all8_ext_full/best.pt \
     --apply-to $RECHECK --alpha 0.4 --splits test --out wbf_final_ext
-python src/make_submission.py --preds wbf_final_ext_a0.4 --out submissions/v2_external_data/wbf_final_ext_a0.4.csv
+python src/make_submission.py --preds wbf_final_ext_a0.4 --out outputs/v2_external_data/wbf_final_ext_a0.4.csv
