@@ -1,9 +1,24 @@
-# Generated datasets, training runs, predictions, weights
-datasets/
-runs/
-preds/
+# Generated datasets (folder kept in git via .gitkeep only)
+datasets/*
+!datasets/.gitkeep
+
+# Weights: only the final ones in runs/ are committed (Git LFS, see .gitattributes); preds/ is committed as is
 *.pt
+*.pth
 *.onnx
+runs/**
+!runs/**/
+!runs/rfdl_e12_full/last_ema.pth
+!runs/y26m_e25_full/weights/last.pt
+!runs/cls_all8_full/best.pt
+!runs/cls_all8_ext_full/best.pt
+!runs/cls_all8/best.pt
+
+# Weight zips from Google Drive (unzip into runs/)
+*.zip
+
+# Claude Code
+.claude/
 
 # Python / notebooks
 __pycache__/

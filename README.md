@@ -37,15 +37,17 @@ classes with its sampler (`--balance 0.5`).
 
 **Google Drive (weights, prepared data, CSVs, report):** https://drive.google.com/drive/folders/1NK1bobppbvLiLvBQ8lU1VcgN5gEnYd4U?usp=sharing
 
-**Reproduce without training** (about 2 minutes): set up the environment (section 3), unzip the weight files
-from Google Drive in the repo root (they extract into `runs/`), then
+**Reproduce without training** (about 2 minutes): set up the environment (section 3). The final weights are in
+the repo under `runs/` (Git LFS, see section 3; the same files are on Google Drive as zips that extract into
+`runs/`), then
 
 ```
 bash run_v1_assignment_only.sh --predict-only
 bash run_v2_external_data.sh --predict-only
 ```
 
-**Reproduce with training:** run the same two scripts without `--predict-only` (about 25 + 10 minutes on an
+**Reproduce with training:** move the committed `runs/` aside first (`mv runs runs_submitted`; the training
+scripts refuse to overwrite an existing run folder), then run the same two scripts without `--predict-only` (about 25 + 10 minutes on an
 RTX 5090; flags for smaller GPUs are at the top of each script). Version 2 also needs the external data:
 unzip `v2_external_prepared.zip` from Google Drive in the repo root (extracts into `datasets/external/`), or download
 the raw Roboflow sets into `external-data/` (list in `EXTERNAL_DATA.md`).
@@ -148,6 +150,9 @@ For a GTX 10xx card change `cu128` to `cu126` in `environment.yml`.
 The competition data is already in the repo, so cloning is enough: `original-data/` is the Kaggle download
 (`2110531-dsde-2026-1/`) under another name, with the same files (`train/train/*.jpg`, `test/test/*.jpg`,
 `train.csv`, `sample_submission.csv`).
+The final weights in `runs/` are stored with Git LFS: install it (`git lfs install`) before cloning, or run
+`git lfs pull` after cloning; without it the `.pt`/`.pth` files are small text pointers and loading them fails.
+The detector predictions of the submitted runs are in `preds/`.
 
 **Hardware used for training:** RTX 5090 (32 GB), Linux. The script defaults are set for it.
 On an 8 GB GPU (tested on an RTX 4070 Laptop) add these flags:
@@ -311,7 +316,9 @@ src/
   reclassify.py          classifier second stage
   evaluate.py            local mAP@50, ablation table, confusion matrix
   make_submission.py     Kaggle CSV
-datasets/ runs/ preds/   generated (not in git; final weights and prepared data on Google Drive)
+runs/                    final weights (Git LFS); other training output is not in git
+preds/                   detector and fused predictions of the submitted runs
+datasets/                generated training data (not in git; prepared data on Google Drive)
 external-data/           Roboflow downloads (not in git; list in EXTERNAL_DATA.md)
 submissions/             submitted CSVs: v1_assignment_only/, v2_external_data/, other/ (earlier submissions)
 run_v1_assignment_only.sh  version 1, assignment data only (private 0.679, public 0.703)
