@@ -37,23 +37,23 @@ classes with its sampler (`--balance 0.5`).
 
 **Google Drive (weights, prepared data, CSVs, report):** https://drive.google.com/drive/folders/1NK1bobppbvLiLvBQ8lU1VcgN5gEnYd4U?usp=sharing
 
-**Reproduce without training** (about 2 minutes): set up the environment (section 3), then
+**How to run** (set up the environment first, section 3). Run version 1 before version 2; `run_v2_external_data.sh`
+takes the same options.
 
-```
-bash run_v1_assignment_only.sh --predict-only
-bash run_v2_external_data.sh --predict-only
-```
+| To... | Command | Weights used | Time (RTX 5090) |
+|---|---|---|---|
+| Reproduce the submitted CSVs | `bash run_v1_assignment_only.sh --predict-only` | `weights/` (submitted, in the repo) | ~1 min |
+| Train from scratch, then predict | `bash run_v1_assignment_only.sh` | `runs/` (written by the training) | ~25 min (v2: ~10 min) |
+| Predict again with weights you trained | `bash run_v1_assignment_only.sh --predict-only runs` | `runs/` | ~1 min |
 
-`--predict-only` uses the submitted weights in `weights/` (Git LFS, see section 3). The same files are on Google
-Drive as zips that extract into `runs/`; to use those, add `runs` after the flag (`--predict-only runs`).
+Nothing has to be moved between folders: `weights/` holds the submitted weights (Git LFS, see section 3) and is
+never written to; training starts from an empty `runs/`. The same weights are on Google Drive as zips that
+extract into `runs/`; after unzipping them, use `--predict-only runs`.
 
-**Reproduce with training:** run the same two scripts without `--predict-only` (about 25 + 10 minutes on an
-RTX 5090; flags for smaller GPUs are at the top of each script). Training writes new weights to `runs/` and
-predicts with them; the submitted weights in `weights/` are not touched. To predict again later with your
-trained weights, without training again, use `--predict-only runs`. Version 2 also needs the external data:
+**Training notes:** flags for smaller GPUs are at the top of each script. Version 2 also needs the external data:
 unzip `v2_external_prepared.zip` from Google Drive in the repo root (extracts into `datasets/external/`), or download
 the raw Roboflow sets into `external-data/` (list in `EXTERNAL_DATA.md`).
-Both modes overwrite the committed CSVs in `preds/` and `submissions/`; `git checkout -- preds submissions`
+Every command in the table overwrites the committed CSVs in `preds/` and `submissions/`; `git checkout -- preds submissions`
 restores the submitted ones.
 GPU training is not bit-exact, so a retrained CSV is close to, not identical to, the submitted one.
 
