@@ -57,7 +57,7 @@ GPU training is not bit-exact, so a retrained CSV is close to, not identical to,
 |---|---|
 | Both scripts with `--predict-only` (Google Drive weights) | CSVs byte-identical to the submitted ones |
 | `run_v1_assignment_only.sh`, trained from scratch | agreement mAP50 0.976 with the submitted CSV |
-| `run_v2_external_data.sh`, trained from the raw Roboflow sets | 12,308 images / 18,867 boxes as above; agreement 0.981 |
+| `run_v2_external_data.sh`, trained from the raw Roboflow sets | the same 16,828 external boxes for the classifier; agreement 0.981 |
 
 Agreement = mAP50 of the new CSV scored against the submitted CSV's boxes with confidence ≥ 0.3 (the test
 labels are hidden). For scale: version 1 vs version 2 scores 0.992, the Round 1 models vs the final models 0.933.
@@ -230,11 +230,10 @@ writes. The long Thai ids shown in `sample_submission.csv` score exactly 0 on Ka
 
 Nine Roboflow datasets, unzipped into `external-data/<set>/` (not in git; sources, versions and class mapping in
 `EXTERNAL_DATA.md`; the prepared result is on Google Drive as `v2_external_prepared.zip`). Only the crop classifier
-uses them; the detectors stay the Round 2 models above. `prepare_external.py` needs the Round 1 classifier
-`runs/cls_all8` (it relabels the mixed external labels).
+uses them; the detectors stay the Round 2 models above.
 
 ```
-python src/prepare_external.py --classifier runs/cls_all8/best.pt   # -> datasets/external (12,308 images, 18,867 boxes)
+python src/prepare_external.py                                      # -> datasets/external (11,838 images, 16,828 boxes)
 
 python src/train_classifier.py --full --classes Car Motorcycle Bus Truck Tuktuk Van Pickup Songthaew \
     --samples-per-epoch 12000 --external datasets/external/external.csv --name cls_all8_ext_full
@@ -244,7 +243,7 @@ python src/make_submission.py --preds wbf_final_ext_a0.4 \
     --out submissions/v2_external_data/wbf_final_ext_a0.4.csv                          # public 0.707, private 0.696
 ```
 
-`run_v2_external_data.sh` runs these commands (and trains `cls_all8` first if `datasets/external` is missing).
+`run_v2_external_data.sh` runs these commands (`prepare_external.py` only if `datasets/external` is missing).
 
 The validation version (`train_classifier.py` without `--full`, then `reclassify.py --preds wbf_new ... --splits val`)
 scores 0.705 against 0.688 without external data. Training the detectors on external CCTV frames

@@ -1,18 +1,16 @@
 """Convert the Roboflow datasets in external-data/ into one box table in our 8 classes.
 
-    python src/prepare_external.py --classifier runs/cls_all8/best.pt
+    python src/prepare_external.py
 
 Reads external-data/<set>/{train,valid,test}/{images,labels} (YOLO export), maps each set's class names to ours
 with MAPPING below (decisions and reasons: EXTERNAL_DATA.md), and writes
   datasets/external/images/<set>__<name>.jpg   one copy per source image, long side at most --max-side
-  datasets/external/external.csv               image_id, class_id, x1, y1, x2, y2 (pixels), dataset, cctv, relabel
+  datasets/external/external.csv               image_id, class_id, x1, y1, x2, y2 (pixels), dataset, cctv
 
 - Roboflow's augmented copies ('<name>.rf.<hash>') are kept once; images repeated across sets are kept once
   (perceptual hash, CCTV-like sets first). Polygons become their bounding box.
-- RELABEL classes (mixed labels) keep the box and take the class our classifier predicts among the classes that
-  label can really be (Car0: Car/Pickup/Truck, ...); relabel=1 marks them, so the crop classifier never trains on
-  its own guesses.
-- TUKTUK_FILTER classes keep only the boxes our classifier predicts as Tuktuk.
+- Class names not in MAPPING are dropped, including traffic_count's mixed labels (Car0 can be a car, pickup or
+  truck). Images left without any box are skipped.
 """
 import argparse
 import re
@@ -21,14 +19,10 @@ from pathlib import Path
 
 import numpy as np
 import pandas as pd
-import torch
 import yaml
 from PIL import Image
-from tqdm import tqdm
 
 from common import CLASS_ID, DATASETS_DIR, ROOT
-from reclassify import load_classifier
-from train_classifier import crop_box, eval_transform
 
 EXT_DIR = ROOT / "external-data"
 OUT_DIR = DATASETS_DIR / "external"
@@ -36,18 +30,13 @@ RF = re.compile(r"\.rf\.[0-9a-f]+$")
 IMG_EXT = {".jpg", ".jpeg", ".png", ".webp", ".bmp"}
 
 C, M, B, T, K, V, P, S = "Car", "Motorcycle", "Bus", "Truck", "Tuktuk", "Van", "Pickup", "Songthaew"
-TUKTUK_FILTER = "tuktuk?"
-# mixed external labels -> the classes the classifier may choose from (measured: unrestricted, it called dark
-# SUVs "Bus" and white cars "Van" on this camera style)
-RELABEL = {"Car0": (C, P, T), "Truck_s": (T, P, V), "Bus_s": (B, V)}
 # Every name not listed is dropped. CCTV-like sets come first so cross-set duplicates keep their copy.
 MAPPING = {
     "vehicle_car": {
         "sedan": C, "SUV": C, "PPV": C, "Motorcycle": M, "bus": B, "truck": T, "Solid box pick-up": T,
         "van": V, "MPV": V, "pick-up": P, "Songthaew": S},
     "traffic_count": {
-        "Car1": C, "Motorcycle": M, "Bus_L": B, "Truck_L": T, "Truck_m": T, "Trailer": T, "Van": V, "Songthaew": S,
-        **{k: "relabel:" + k for k in RELABEL}},
+        "Car1": C, "Motorcycle": M, "Bus_L": B, "Truck_L": T, "Truck_m": T, "Trailer": T, "Van": V, "Songthaew": S},
     "vehicle_detection_v22": {
         "sedan": C, "hatchback": C, "suv": C, "jeep": C, "taxi": C, "motorcycle": M, "bus": B, "truck": T,
         "tuktuk": K, "van": V, "pickup": P, "songthaew": S},
@@ -63,13 +52,16 @@ MAPPING = {
     "tuktuk_detection": {"tuktuk": K},
 }
 CCTV_SETS = {"vehicle_car", "traffic_count"}
+# traffic_count's mixed labels (Car0 can be a car, pickup or truck) give no box, but a frame that has them still
+# claims its picture, so a near-identical later frame is skipped as a duplicate
+MIXED = {"Car0", "Truck_s", "Bus_s"}
 
 
 def parse_args():
     p = argparse.ArgumentParser()
-    p.add_argument("--classifier", required=True, help="8-class crop classifier for RELABEL / TUKTUK_FILTER boxes")
+    p.add_argument("--sets", nargs="+", default=list(MAPPING), choices=list(MAPPING),
+                   help="only these datasets (default: all, in MAPPING order)")
     p.add_argument("--max-side", type=int, default=1280)
-    p.add_argument("--batch", type=int, default=256)
     return p.parse_args()
 
 
@@ -97,28 +89,6 @@ def read_boxes(lab, W, H):
     return out
 
 
-@torch.no_grad()
-def predict_classes(rows, img_dir, model, ckpt, device, batch):
-    """Classifier probabilities over our 8 class ids for each row of a box table (rows returned sorted)."""
-    tf = eval_transform(ckpt["img_size"])
-    ids = [CLASS_ID[c] for c in ckpt["classes"]]
-    probs, crops = [], []
-    rows = sorted(rows, key=lambda r: r["image_id"])
-    cache = (None, None)
-    for i, r in enumerate(tqdm(rows, desc="classify", leave=False)):
-        if cache[0] != r["image_id"]:
-            cache = (r["image_id"], Image.open(img_dir / r["image_id"]).convert("RGB"))
-        crops.append(tf(crop_box(cache[1], (r["x1"], r["y1"], r["x2"], r["y2"]), ckpt["pad"])))
-        if len(crops) == batch or i == len(rows) - 1:
-            with torch.autocast("cuda", dtype=torch.bfloat16, enabled=device == "cuda"):
-                p = model(torch.stack(crops).to(device)).float().softmax(1).cpu().numpy()
-            full = np.zeros((len(p), len(CLASS_ID)), dtype=np.float32)
-            full[:, ids] = p
-            probs += list(full)
-            crops = []
-    return rows, probs
-
-
 def main():
     args = parse_args()
     if OUT_DIR.exists():
@@ -127,7 +97,8 @@ def main():
     img_dir.mkdir(parents=True)
 
     rows, hashes, report = [], set(), []
-    for ds, mapping in MAPPING.items():
+    for ds in args.sets:
+        mapping = MAPPING[ds]
         root = EXT_DIR / ds
         names = yaml.safe_load(open(root / "data.yaml"))["names"]
         seen, n_img, n_dup = set(), 0, 0
@@ -142,12 +113,12 @@ def main():
                 n_dup += 1
                 continue
             W, H = im.size
-            boxes = [(mapping.get(names[c], None), *xyxy) for c, *xyxy in
-                     read_boxes(path.parent.parent / "labels" / (path.stem + ".txt"), W, H)]
-            boxes = [b for b in boxes if b[0] is not None]
+            labels = read_boxes(path.parent.parent / "labels" / (path.stem + ".txt"), W, H)
+            boxes = [(mapping[names[c]], *xyxy) for c, *xyxy in labels if names[c] in mapping]
+            if boxes or (ds == "traffic_count" and any(names[c] in MIXED for c, *_ in labels)):
+                hashes.add(h)
             if not boxes:
                 continue
-            hashes.add(h)
             scale = min(1.0, args.max_side / max(W, H))
             if scale < 1:
                 im = im.resize((round(W * scale), round(H * scale)), Image.BILINEAR)
@@ -159,45 +130,22 @@ def main():
                                  y2=y2 * scale, dataset=ds, cctv=int(ds in CCTV_SETS)))
         report.append((ds, n_img, n_dup))
 
-    # boxes whose class comes from our classifier
-    device = "cuda" if torch.cuda.is_available() else "cpu"
-    model, ckpt = load_classifier(args.classifier, device)
-    special = lambda t: t == TUKTUK_FILTER or t.startswith("relabel:")
-    todo = [r for r in rows if special(r["target"])]
-    done = [r for r in rows if not special(r["target"])]
-    todo, probs = predict_classes(todo, img_dir, model, ckpt, device, args.batch)
-    kept_tuk = 0
-    for r, pr in zip(todo, probs):
-        if r["target"].startswith("relabel:"):
-            allowed = [CLASS_ID[c] for c in RELABEL[r["target"].split(":", 1)[1]]]
-            done.append({**r, "target": None, "class_id": max(allowed, key=lambda c: pr[c]), "relabel": 1})
-        elif pr.argmax() == CLASS_ID[K]:
-            done.append({**r, "target": K})
-            kept_tuk += 1
-    for r in done:
-        if r.get("target"):
-            r["class_id"], r["relabel"] = CLASS_ID[r["target"]], 0
+    for r in rows:
+        r["class_id"] = CLASS_ID[r.pop("target")]
 
-    df = pd.DataFrame(done).drop(columns="target")
+    df = pd.DataFrame(rows)
     for col in ["x1", "y1", "x2", "y2"]:
         df[col] = df[col].round(1)
-    df = df[["image_id", "class_id", "x1", "y1", "x2", "y2", "dataset", "cctv", "relabel"]].sort_values(
+    df = df[["image_id", "class_id", "x1", "y1", "x2", "y2", "dataset", "cctv"]].sort_values(
         ["dataset", "image_id"], kind="stable")
     df.to_csv(OUT_DIR / "external.csv", index=False)
 
-    # images left without any box after filtering are removed
     used = set(df.image_id)
-    for p in img_dir.iterdir():
-        if p.name not in used:
-            p.unlink()
-
     print(f"{len(used)} images, {len(df)} boxes -> {OUT_DIR}")
     print(pd.DataFrame(report, columns=["dataset", "images", "cross-set duplicates"]).to_string(index=False))
-    print(f"3 wheel motorbike kept as Tuktuk: {kept_tuk} of {sum(r['target'] == TUKTUK_FILTER for r in todo)}")
     tab = df.assign(cls=df.class_id.map(dict(enumerate(CLASS_ID)))).pivot_table(
         index="dataset", columns="cls", values="x1", aggfunc="count", fill_value=0)
     print(tab[[c for c in CLASS_ID if c in tab.columns]].to_string())
-    print("re-labelled boxes:", int(df.relabel.sum()))
 
 
 if __name__ == "__main__":

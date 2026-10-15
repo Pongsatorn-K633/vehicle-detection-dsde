@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Version 2: assignment data + external data for the crop classifier (Kaggle private 0.696, public 0.707).
-# Same detectors as version 1; only the ConvNeXt-Tiny classifier is also trained on 18,867 boxes from
+# Same detectors as version 1; only the ConvNeXt-Tiny classifier is also trained on 16,828 boxes from
 # nine Roboflow datasets (sources and class mapping: EXTERNAL_DATA.md).
 #
 #   bash run_v1_assignment_only.sh                 # first: makes the shared detector predictions (preds/wbf_final)
@@ -31,9 +31,7 @@ if [[ "${1:-}" != "--predict-only" ]]; then
                  "sets into external-data/ (EXTERNAL_DATA.md)" >&2
             exit 1
         fi
-        # round-1 classifier (validation cameras held out); only used to relabel mixed external labels
-        python src/train_classifier.py --classes $CLASSES --samples-per-epoch 12000 --name cls_all8
-        python src/prepare_external.py --classifier runs/cls_all8/best.pt
+        python src/prepare_external.py
     fi
     python src/train_classifier.py --full --classes $CLASSES --samples-per-epoch 12000 \
         --external datasets/external/external.csv --name cls_all8_ext_full

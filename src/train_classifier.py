@@ -45,7 +45,7 @@ def parse_args():
     p.add_argument("--seed", type=int, default=0)
     p.add_argument("--external", default=None,
                    help="extra training boxes, e.g. datasets/external/external.csv (from prepare_external.py); "
-                        "boxes re-labelled by our classifier are skipped, validation is never touched")
+                        "validation is never touched")
     return p.parse_args()
 
 
@@ -120,7 +120,7 @@ def main():
     train_df, val_df = (df if args.full else df[~in_val]), df[in_val]
     if args.external:
         ext = pd.read_csv(args.external)
-        ext = ext[(ext.relabel == 0) & ext.class_id.isin([CLASS_ID[c] for c in args.classes])].copy()
+        ext = ext[ext.class_id.isin([CLASS_ID[c] for c in args.classes])].copy()
         ext["label"] = ext.class_id.map({CLASS_ID[c]: i for i, c in enumerate(args.classes)})
         ext["path"] = ext.image_id.map(lambda f: Path(args.external).parent / "images" / f)
         print(f"External boxes added to train: {len(ext)}")

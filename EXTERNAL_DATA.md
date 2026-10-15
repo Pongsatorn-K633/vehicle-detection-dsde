@@ -97,32 +97,25 @@ Our definitions (competition PDF):
 | `4 wheel small truck`, `mini_truck` | kei trucks (Suzuki Carry type), no matching class |
 | `4WTuktuk` | small 4-wheel taxi, no matching class |
 | `3 wheel motorbike` | mix of tuktuks and cargo trikes; first filtered to tuktuk-looking crops, then dropped entirely (val 0.710 with them, 0.713 without) |
+| `Car0` (traffic_count) | mixes cars, pickups and trucks |
+| `Truck_s` (traffic_count) | mixes small trucks, box-pickups and vans |
+| `Bus_s` (traffic_count) | mixes minibuses and vans |
 | all of `bangkok_bus` | no labels |
 
-### Re-labelled by our model
-
-| External class | Problem | Handling |
-|---|---|---|
-| `Car0` (traffic_count) | mixes cars and pickups | box kept, class predicted by our 8-class classifier |
-| `Truck_s` (traffic_count) | mixes small trucks, box-pickups and vans | same |
-| `Bus_s` (traffic_count) | mixes minibuses and vans | same |
-
-Re-labelled boxes are used only for the detector (so the vehicle is not treated as background), never to
-train the classifier, which would only learn its own guesses back.
+A frame that has only mixed labels (`Car0`, `Truck_s`, `Bus_s`) gives no box, but it still counts for duplicate
+detection, so a near-identical later frame of the same video is skipped.
 
 ## 3. How the data is prepared
 
 1. One copy per source image (Roboflow `.rf.<hash>` copies removed); cross-set duplicates kept once.
 2. Polygon labels converted to their bounding box.
 3. Class names mapped with the tables above; dropped classes removed.
-4. `traffic_count` mixed classes re-labelled by our classifier, limited to the classes each label can be
-   (Car0: Car/Pickup/Truck, Truck_s: Truck/Pickup/Van, Bus_s: Bus/Van). Unrestricted, it called dark SUVs "Bus".
-5. For the detector (CCTV-like sets only): vehicles the external labels missed are filled in with our Round 1
+4. For the detector (CCTV-like sets only): vehicles the external labels missed are filled in with our Round 1
    detectors, and images are shrunk to our scale (objects about 5% of the image).
 
 ## 4. Expected gain per class
 
-Unique boxes after mapping (approximate, before the tuktuk filter and re-labelling).
+Unique boxes after mapping (approximate, measured before the final class decisions).
 
 | Class | Our train boxes | Val AP50 | External boxes | of which CCTV-like | Value |
 |---|---|---|---|---|---|
@@ -137,8 +130,8 @@ Unique boxes after mapping (approximate, before the tuktuk filter and re-labelli
 ## 5. Experiments
 
 All on the Round 1 validation split (3 held-out cameras), same detectors (RF-DETR Large 12 epochs + YOLO26m
-25 epochs, last epochs), only the classifier changes. `datasets/external/external.csv`: 12,308 images and
-18,867 boxes; 16,828 used for the classifier (re-labelled boxes excluded).
+25 epochs, last epochs), only the classifier changes. `datasets/external/external.csv`: 11,838 images and
+16,828 boxes.
 
 | Classifier | External crops | Classifier balanced acc | Best alpha | Val mAP50 |
 |---|---|---|---|---|
@@ -182,7 +175,9 @@ camera angle is not a problem.
 Detector data: `src/prepare_external_det.py`. `vehicle_car` and `traffic_count` only; 713 close-up images
 skipped (largest box above 35% of the image side); 4 images resized to 176 × 144 and tiled into one 352 × 288
 frame; missing vehicles filled in by the Round 1 detectors (fused score ≥ 0.35, no overlap with a labelled box).
-Result: 593 frames, 9,464 boxes (3,108 filled in), median box 4.6% of the frame (ours 5.0%). Added once each to
+Result: 593 frames, 9,464 boxes (3,108 filled in), median box 4.6% of the frame (ours 5.0%). This experiment
+was run with an earlier `external.csv` in which traffic_count's mixed labels were kept, with a class predicted
+by the Round 1 classifier; the current file drops them, so a rerun gives slightly different frames. Added once each to
 the Round 1 train split (`prepare_data.py --external`); validation unchanged. Same training settings.
 
 | Pipeline (val mAP50) | Detector only, no TTA | + flip TTA, WBF 2:1 | + external classifier, alpha 0.4 | alpha 0.6 |
