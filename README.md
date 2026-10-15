@@ -9,6 +9,42 @@ data only. Both are final selections on Kaggle; Kaggle counts the better private
 The full write-up is the report (submitted on MCV; a copy is in the Google Drive folder); the external datasets and every keep/drop decision
 are in [EXTERNAL_DATA.md](EXTERNAL_DATA.md).
 
+## Quick start: check that the code runs
+
+This predicts the test set with the trained weights included in `weights/`; no training and no downloads.
+The commands are the same on Windows, macOS and Linux.
+
+**1. Open a terminal in the unzipped folder** (Windows: open "Anaconda Prompt", then `cd` into the folder).
+
+**2. Create the environment** (once)
+
+```
+conda env create -f environment.yml
+conda activate vehicle-det
+```
+
+**3. Run version 1, then version 2** (about 1 minute each on our GPU)
+
+```
+python run_v1_assignment_only.py --predict-only
+python run_v2_external_data.py --predict-only
+```
+
+**4. Done** when each run prints a line like
+`Wrote 99469 boxes for 997/997 images -> ...outputs/v1_assignment_only/wbf_final_c8big_a0.4.csv`.
+The CSVs are written to `outputs/`, in the Kaggle submission format:
+
+| Version | CSV written by the run | Submitted CSV (for comparison) | Kaggle private / public mAP@50 |
+|---|---|---|---|
+| 1: assignment data only | `outputs/v1_assignment_only/wbf_final_c8big_a0.4.csv` | `submissions/v1_assignment_only/wbf_final_c8big_a0.4.csv` | 0.679 / 0.703 |
+| 2: + external data | `outputs/v2_external_data/wbf_final_ext_a0.4.csv` | `submissions/v2_external_data/wbf_final_ext_a0.4.csv` | **0.696 / 0.707** |
+
+**Tested on:** Linux, NVIDIA RTX 5090 (32 GB, driver 595.84), CUDA 12.8, Python 3.11, PyTorch 2.8.0. There the
+CSVs are byte-identical to the submitted ones. Not tested on Windows, macOS or without an NVIDIA GPU; on other
+hardware the numbers can differ slightly. For a GTX 10xx GPU see [section 3](#3-setup).
+On Linux/macOS `bash run_v1_assignment_only.sh --predict-only` (and the same for v2) does the same thing.
+To retrain the models instead, see "How to run" below.
+
 ## Two versions
 
 Both versions use the same code in `src/` and the same two detectors. They differ only in the data the
@@ -17,7 +53,7 @@ ConvNeXt-Tiny crop classifier is trained on.
 | | Version 1: assignment data only | Version 2: + external data |
 |---|---|---|
 | Classifier training data | 27,396 boxes of the 2,991 Kaggle train images | the same + 16,828 boxes from 8 Roboflow datasets |
-| Script | `bash run_v1_assignment_only.sh` | `bash run_v2_external_data.sh` (after version 1) |
+| Script (`.py` and `.sh` do the same) | `run_v1_assignment_only.py` / `.sh` | `run_v2_external_data.py` / `.sh` (after version 1) |
 | Weights (Google Drive) | `shared_detectors_v1_v2.zip`, `v1_classifier.zip` | `shared_detectors_v1_v2.zip`, `v2_classifier.zip` |
 | Submitted CSV | `submissions/v1_assignment_only/wbf_final_c8big_a0.4.csv` | `submissions/v2_external_data/wbf_final_ext_a0.4.csv` |
 | Script writes | `outputs/v1_assignment_only/wbf_final_c8big_a0.4.csv` | `outputs/v2_external_data/wbf_final_ext_a0.4.csv` |
@@ -38,14 +74,14 @@ classes with its sampler (`--balance 0.5`).
 
 **Google Drive (weights, prepared data, CSVs, report):** https://drive.google.com/drive/folders/1NK1bobppbvLiLvBQ8lU1VcgN5gEnYd4U?usp=sharing
 
-**How to run** (set up the environment first, section 3). Run version 1 before version 2; `run_v2_external_data.sh`
-takes the same options.
+**How to run** (set up the environment first, section 3). Run version 1 before version 2; `run_v2_external_data.py`
+takes the same options. On Linux/macOS, `bash run_v1_assignment_only.sh` with the same options does the same.
 
 | To... | Command | Weights used | Time (RTX 5090) |
 |---|---|---|---|
-| Reproduce the submitted CSVs | `bash run_v1_assignment_only.sh --predict-only` | `weights/` (submitted, in the repo) | ~1 min |
-| Train from scratch, then predict | `bash run_v1_assignment_only.sh` | `runs/` (written by the training) | ~25 min (v2: ~10 min) |
-| Predict again with weights you trained | `bash run_v1_assignment_only.sh --predict-only runs` | `runs/` | ~1 min |
+| Reproduce the submitted CSVs | `python run_v1_assignment_only.py --predict-only` | `weights/` (submitted, in the repo) | ~1 min |
+| Train from scratch, then predict | `python run_v1_assignment_only.py` | `runs/` (written by the training) | ~25 min (v2: ~10 min) |
+| Predict again with weights you trained | `python run_v1_assignment_only.py --predict-only runs` | `runs/` | ~1 min |
 
 Nothing has to be moved between folders: `weights/` holds the submitted weights (Git LFS, see section 3) and is
 never written to; training starts from an empty `runs/`. The same weights are on Google Drive as zips that
@@ -55,7 +91,7 @@ extract into `runs/`; after unzipping them, use `--predict-only runs`.
 unzip `v2_external_prepared.zip` from Google Drive in the repo root (extracts into `datasets/external/`), or download
 the raw Roboflow sets into `external-data/` (list in `EXTERNAL_DATA.md`).
 Every command in the table writes its CSV to `outputs/` (same file names as in `submissions/`), so the submitted
-CSVs are never overwritten. The intermediate predictions in `preds/` are overwritten.
+CSVs are never overwritten. The intermediate predictions of each step go to `preds/` (not in git).
 GPU training is not bit-exact, so a retrained CSV is close to, not identical to, the submitted one.
 
 **Checked on 2026-10-09** in a fresh clone with a fresh environment from `environment.yml`:
@@ -157,7 +193,6 @@ The competition data is already in the repo, so cloning is enough: `original-dat
 `train.csv`, `sample_submission.csv`).
 The submitted weights in `weights/` are stored with Git LFS: install it (`git lfs install`) before cloning, or run
 `git lfs pull` after cloning; without it the `.pt`/`.pth` files are small text pointers and loading them fails.
-The detector predictions of the submitted runs are in `preds/`.
 
 **Hardware used for training:** RTX 5090 (32 GB), Linux. The script defaults are set for it.
 On an 8 GB GPU (tested on an RTX 4070 Laptop) add these flags:
@@ -168,7 +203,8 @@ On an 8 GB GPU (tested on an RTX 4070 Laptop) add these flags:
 | `train_yolo.py` | `--model yolo26m.pt --batch 8 --workers 4` | 5.8 GB, ~3 min/epoch |
 | `train_classifier.py` | none | |
 
-With the run scripts, pass them as `RFDETR_ARGS="..." YOLO_ARGS="..." bash run_v1_assignment_only.sh`.
+With the run scripts, pass them as `python run_v1_assignment_only.py --rfdetr-args "..." --yolo-args "..."`
+(or `RFDETR_ARGS="..." YOLO_ARGS="..." bash run_v1_assignment_only.sh`).
 
 **Before a long run on a new machine**, train one epoch to check memory and time, then delete the test run:
 
@@ -231,7 +267,7 @@ python src/make_submission.py --preds wbf_final_c8big_a0.4 \
     --out submissions/v1_assignment_only/wbf_final_c8big_a0.4.csv                      # public 0.703, private 0.679
 ```
 
-`run_v1_assignment_only.sh` runs exactly these commands.
+`run_v1_assignment_only.py` and `.sh` run exactly these commands.
 
 **`image_id` must be the short test file name** (`1068_20260825_060110.jpg`), which `make_submission.py`
 writes. The long Thai ids shown in `sample_submission.csv` score exactly 0 on Kaggle.
@@ -253,7 +289,7 @@ python src/make_submission.py --preds wbf_final_ext_a0.4 \
     --out submissions/v2_external_data/wbf_final_ext_a0.4.csv                          # public 0.707, private 0.696
 ```
 
-`run_v2_external_data.sh` runs these commands (`prepare_external.py` only if `datasets/external` is missing).
+`run_v2_external_data.py` and `.sh` run these commands (`prepare_external.py` only if `datasets/external` is missing).
 
 The validation version (`train_classifier.py` without `--full`, then `reclassify.py --preds wbf_new ... --splits val`)
 scores 0.705 against 0.688 without external data. Training the detectors on external CCTV frames
@@ -323,12 +359,12 @@ src/
   make_submission.py     Kaggle CSV
 weights/                 submitted weights (Git LFS), used by --predict-only
 runs/                    training output (not in git)
-preds/                   detector and fused predictions of the submitted runs
+preds/                   intermediate predictions of each step (not in git)
 datasets/                generated training data (not in git; prepared data on Google Drive)
 external-data/           Roboflow downloads (not in git; list in EXTERNAL_DATA.md)
 submissions/             submitted CSVs: v1_assignment_only/, v2_external_data/, other/ (earlier submissions)
 outputs/                 CSVs written by the run scripts (not in git)
-run_v1_assignment_only.sh  version 1, assignment data only (private 0.679, public 0.703)
-run_v2_external_data.sh    version 2, + external data (private 0.696, public 0.707)
+run_v1_assignment_only.py  version 1, assignment data only (private 0.679, public 0.703); .sh does the same
+run_v2_external_data.py    version 2, + external data (private 0.696, public 0.707); .sh does the same
 environment.yml          conda environment (versions pinned)
 ```

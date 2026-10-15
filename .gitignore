@@ -1,13 +1,15 @@
-# Generated datasets and training runs (folders kept in git via .gitkeep only)
+# Generated datasets, training runs and predictions (folders kept in git via .gitkeep only)
 datasets/*
 runs/*
+preds/*
 !datasets/.gitkeep
 !runs/.gitkeep
+!preds/.gitkeep
 
 # CSVs written by the run scripts (the submitted ones are in submissions/)
 outputs/
 
-# Weights: only the submitted ones in weights/ are committed (Git LFS, see .gitattributes); preds/ is committed as is
+# Weights: only the submitted ones in weights/ are committed (Git LFS, see .gitattributes)
 *.pt
 *.pth
 *.onnx

@@ -3,8 +3,7 @@
 # Same detectors as version 1; only the ConvNeXt-Tiny classifier is also trained on 16,828 boxes from
 # nine Roboflow datasets (sources and class mapping: EXTERNAL_DATA.md).
 #
-#   bash run_v1_assignment_only.sh                 # first: makes the shared detector predictions (preds/wbf_final;
-#                                                  #   the submitted ones are already in the repo)
+#   bash run_v1_assignment_only.sh                 # first: makes the shared detector predictions (preds/wbf_final)
 #   bash run_v2_external_data.sh                   # train the classifier, then predict (~10 min on an RTX 5090)
 #   bash run_v2_external_data.sh --predict-only    # use the submitted classifier in weights/
 #   bash run_v2_external_data.sh --predict-only runs  # predict again with the classifier you trained (runs/)
