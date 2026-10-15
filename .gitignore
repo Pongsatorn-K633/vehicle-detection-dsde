@@ -10,8 +10,7 @@ __pycache__/
 *.py[cod]
 .ipynb_checkpoints/
 
-# Editor / tools
-.claude/
+# Editor
 .vscode/
 
 # Duplicate of the Kaggle download (same files as original-data/)
