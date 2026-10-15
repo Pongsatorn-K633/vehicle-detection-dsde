@@ -5,6 +5,7 @@
 #
 #   bash run_v1_assignment_only.sh                 # train everything, then predict (~25 min on an RTX 5090)
 #   bash run_v1_assignment_only.sh --predict-only  # use the submitted weights in weights/ (~1 min)
+#   bash run_v1_assignment_only.sh --predict-only runs  # predict again with weights you trained (runs/)
 #
 # Training writes to runs/ and predicts with those new weights; weights/ (the submitted ones) is never touched.
 #
@@ -21,7 +22,7 @@ RECHECK="Car Truck Bus Pickup Songthaew Van"
 
 W=runs  # weights to predict with: freshly trained (runs/) or submitted (weights/)
 if [[ "${1:-}" == "--predict-only" ]]; then
-    W=weights
+    W="${2:-weights}"
 else
     if [[ -f datasets/rfdetr_full/train/_annotations.coco.json && -f datasets/yolo_full/data.yaml ]]; then
         echo "datasets/rfdetr_full and datasets/yolo_full already exist (e.g. from Google Drive): not rebuilding"

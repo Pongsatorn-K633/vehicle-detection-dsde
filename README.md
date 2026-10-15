@@ -44,12 +44,13 @@ bash run_v1_assignment_only.sh --predict-only
 bash run_v2_external_data.sh --predict-only
 ```
 
-`--predict-only` uses the submitted weights in `weights/` (Git LFS, see section 3; the same files are on Google
-Drive as zips, which extract into `runs/`: rename that to `weights/`).
+`--predict-only` uses the submitted weights in `weights/` (Git LFS, see section 3). The same files are on Google
+Drive as zips that extract into `runs/`; to use those, add `runs` after the flag (`--predict-only runs`).
 
 **Reproduce with training:** run the same two scripts without `--predict-only` (about 25 + 10 minutes on an
 RTX 5090; flags for smaller GPUs are at the top of each script). Training writes new weights to `runs/` and
-predicts with them; the submitted weights in `weights/` are not touched. Version 2 also needs the external data:
+predicts with them; the submitted weights in `weights/` are not touched. To predict again later with your
+trained weights, without training again, use `--predict-only runs`. Version 2 also needs the external data:
 unzip `v2_external_prepared.zip` from Google Drive in the repo root (extracts into `datasets/external/`), or download
 the raw Roboflow sets into `external-data/` (list in `EXTERNAL_DATA.md`).
 Both modes overwrite the committed CSVs in `preds/` and `submissions/`; `git checkout -- preds submissions`

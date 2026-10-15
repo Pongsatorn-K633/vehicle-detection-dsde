@@ -7,6 +7,7 @@
 #                                                  #   the submitted ones are already in the repo)
 #   bash run_v2_external_data.sh                   # train the classifier, then predict (~10 min on an RTX 5090)
 #   bash run_v2_external_data.sh --predict-only    # use the submitted classifier in weights/
+#   bash run_v2_external_data.sh --predict-only runs  # predict again with the classifier you trained (runs/)
 #
 # Output: submissions/v2_external_data/wbf_final_ext_a0.4.csv
 #
@@ -25,7 +26,7 @@ fi
 
 W=runs  # classifier to predict with: freshly trained (runs/) or submitted (weights/)
 if [[ "${1:-}" == "--predict-only" ]]; then
-    W=weights
+    W="${2:-weights}"
 else
     if [[ -f datasets/external/external.csv ]]; then
         echo "datasets/external already exists (e.g. from Google Drive): not rebuilding"
