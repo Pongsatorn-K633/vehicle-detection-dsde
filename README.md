@@ -123,7 +123,7 @@ Where each model's training data comes from:
 The classifier does not use the detectors' oversampled copies: it reads each Kaggle box once and balances the
 classes with its sampler (`--balance 0.5`).
 
-**Google Drive (weights, prepared data, CSVs, report):** https://drive.google.com/drive/folders/1NK1bobppbvLiLvBQ8lU1VcgN5gEnYd4U?usp=sharing
+**Google Drive (weights, prepared data, CSVs, report):** https://drive.google.com/drive/folders/1wSV29W61VfgOBnFwEXWxlHYiE4H2uF4X?usp=sharing
 
 **How to run** (set up the environment first, section 3). Run version 1 before version 2; `run_v2_external_data.py`
 takes the same options. On Linux/macOS, `bash run_v1_assignment_only.sh` with the same options does the same.
